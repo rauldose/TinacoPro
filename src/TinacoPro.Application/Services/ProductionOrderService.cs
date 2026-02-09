@@ -61,9 +61,11 @@ public class ProductionOrderService
         };
     }
 
+    private static readonly Random _random = new Random();
+
     public async Task<ProductionOrderDto> CreateOrderAsync(CreateProductionOrderDto dto)
     {
-        var orderNumber = $"PO-{DateTime.UtcNow:yyyyMMdd}-{new Random().Next(1000, 9999)}";
+        var orderNumber = $"PO-{DateTime.UtcNow:yyyyMMdd}-{_random.Next(1000, 9999)}";
         
         var order = new ProductionOrder
         {

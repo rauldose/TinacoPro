@@ -150,6 +150,8 @@ public class TinacoProDbContext : DbContext
 
     private void SeedData(ModelBuilder modelBuilder)
     {
+        var seedDate = new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+        
         // Seed admin user (password: admin123)
         modelBuilder.Entity<User>().HasData(
             new User
@@ -161,28 +163,28 @@ public class TinacoProDbContext : DbContext
                 Email = "admin@tinacopro.com",
                 Role = UserRole.Admin,
                 IsActive = true,
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = seedDate
             }
         );
 
         // Seed sample products
         modelBuilder.Entity<Product>().HasData(
-            new Product { Id = 1, Name = "Tinaco Estándar", Model = "TE-500", Size = "Pequeño", Capacity = 500, Description = "Tinaco de 500 litros", IsActive = true, CreatedAt = DateTime.UtcNow },
-            new Product { Id = 2, Name = "Tinaco Grande", Model = "TG-1000", Size = "Mediano", Capacity = 1000, Description = "Tinaco de 1000 litros", IsActive = true, CreatedAt = DateTime.UtcNow },
-            new Product { Id = 3, Name = "Tinaco Premium", Model = "TP-2000", Size = "Grande", Capacity = 2000, Description = "Tinaco premium de 2000 litros", IsActive = true, CreatedAt = DateTime.UtcNow }
+            new Product { Id = 1, Name = "Tinaco Estándar", Model = "TE-500", Size = "Pequeño", Capacity = 500, Description = "Tinaco de 500 litros", IsActive = true, CreatedAt = seedDate },
+            new Product { Id = 2, Name = "Tinaco Grande", Model = "TG-1000", Size = "Mediano", Capacity = 1000, Description = "Tinaco de 1000 litros", IsActive = true, CreatedAt = seedDate },
+            new Product { Id = 3, Name = "Tinaco Premium", Model = "TP-2000", Size = "Grande", Capacity = 2000, Description = "Tinaco premium de 2000 litros", IsActive = true, CreatedAt = seedDate }
         );
 
         // Seed sample raw materials
         modelBuilder.Entity<RawMaterial>().HasData(
-            new RawMaterial { Id = 1, Name = "Polietileno", Code = "PE-001", Unit = "kg", CurrentStock = 1000, MinimumStock = 200, UnitCost = 25.50m, IsActive = true, CreatedAt = DateTime.UtcNow },
-            new RawMaterial { Id = 2, Name = "Colorante Negro", Code = "CN-001", Unit = "kg", CurrentStock = 50, MinimumStock = 10, UnitCost = 45.00m, IsActive = true, CreatedAt = DateTime.UtcNow },
-            new RawMaterial { Id = 3, Name = "Aditivo UV", Code = "UV-001", Unit = "liters", CurrentStock = 30, MinimumStock = 5, UnitCost = 120.00m, IsActive = true, CreatedAt = DateTime.UtcNow }
+            new RawMaterial { Id = 1, Name = "Polietileno", Code = "PE-001", Unit = "kg", CurrentStock = 1000, MinimumStock = 200, UnitCost = 25.50m, IsActive = true, CreatedAt = seedDate },
+            new RawMaterial { Id = 2, Name = "Colorante Negro", Code = "CN-001", Unit = "kg", CurrentStock = 50, MinimumStock = 10, UnitCost = 45.00m, IsActive = true, CreatedAt = seedDate },
+            new RawMaterial { Id = 3, Name = "Aditivo UV", Code = "UV-001", Unit = "liters", CurrentStock = 30, MinimumStock = 5, UnitCost = 120.00m, IsActive = true, CreatedAt = seedDate }
         );
 
         // Seed sample suppliers
         modelBuilder.Entity<Supplier>().HasData(
-            new Supplier { Id = 1, Name = "Proveedora de Plásticos SA", ContactName = "Juan Pérez", Phone = "555-1234", Email = "ventas@plasticos.com", Address = "Calle Principal 123", IsActive = true, CreatedAt = DateTime.UtcNow },
-            new Supplier { Id = 2, Name = "Químicos Industriales", ContactName = "María García", Phone = "555-5678", Email = "contacto@quimicos.com", Address = "Av. Industrial 456", IsActive = true, CreatedAt = DateTime.UtcNow }
+            new Supplier { Id = 1, Name = "Proveedora de Plásticos SA", ContactName = "Juan Pérez", Phone = "555-1234", Email = "ventas@plasticos.com", Address = "Calle Principal 123", IsActive = true, CreatedAt = seedDate },
+            new Supplier { Id = 2, Name = "Químicos Industriales", ContactName = "María García", Phone = "555-5678", Email = "contacto@quimicos.com", Address = "Av. Industrial 456", IsActive = true, CreatedAt = seedDate }
         );
     }
 }
