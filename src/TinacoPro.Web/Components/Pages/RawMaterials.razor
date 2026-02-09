@@ -6,124 +6,135 @@
 
 <PageTitle>Raw Materials - TinacoPro</PageTitle>
 
-<h1 class="mb-4">Raw Materials Inventory</h1>
+<MudText Typo="Typo.h4" Class="mb-4">Raw Materials Inventory</MudText>
 
-<div class="mb-3">
-    <button class="btn btn-primary" @onclick="ShowCreateForm">
-        <i class="bi bi-plus-circle"></i> New Material
-    </button>
-</div>
+<MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" 
+           OnClick="ShowCreateForm" Class="mb-4">
+    New Material
+</MudButton>
 
 @if (materials == null)
 {
-    <p><em>Loading...</em></p>
-}
-else if (materials.Any())
-{
-    <div class="table-responsive">
-        <table class="table table-striped">
-            <thead>
-                <tr>
-                    <th>Name</th>
-                    <th>Code</th>
-                    <th>Unit</th>
-                    <th>Current Stock</th>
-                    <th>Minimum Stock</th>
-                    <th>Unit Cost</th>
-                    <th>Status</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var material in materials)
-                {
-                    <tr class="@(material.IsLowStock ? "table-warning" : "")">
-                        <td>@material.Name</td>
-                        <td>@material.Code</td>
-                        <td>@material.Unit</td>
-                        <td>
-                            @material.CurrentStock
-                            @if (material.IsLowStock)
-                            {
-                                <i class="bi bi-exclamation-triangle text-warning"></i>
-                            }
-                        </td>
-                        <td>@material.MinimumStock</td>
-                        <td>$@material.UnitCost.ToString("F2")</td>
-                        <td>
-                            <span class="badge @(material.IsActive ? "bg-success" : "bg-secondary")">
-                                @(material.IsActive ? "Active" : "Inactive")
-                            </span>
-                        </td>
-                        <td>
-                            <button class="btn btn-sm btn-info" @onclick="() => ShowEditForm(material)">
-                                <i class="bi bi-pencil"></i> Edit
-                            </button>
-                        </td>
-                    </tr>
-                }
-            </tbody>
-        </table>
-    </div>
+    <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
 }
 else
 {
-    <div class="alert alert-info">No raw materials found. Create your first material!</div>
+    @if (materials.Any(m => m.IsLowStock && m.IsActive))
+    {
+        <MudAlert Severity="Severity.Warning" Class="mb-4" Icon="@Icons.Material.Filled.Warning">
+            <strong>Low Stock Alert:</strong> @materials.Count(m => m.IsLowStock && m.IsActive) material(s) are running low on stock!
+        </MudAlert>
+    }
+
+    @if (materials.Any())
+    {
+        <MudTable Items="@materials" Hover="true" Striped="true" Dense="true" Elevation="2">
+            <HeaderContent>
+                <MudTh>Name</MudTh>
+                <MudTh>Code</MudTh>
+                <MudTh>Category</MudTh>
+                <MudTh>Unit</MudTh>
+                <MudTh>Current Stock</MudTh>
+                <MudTh>Min Stock</MudTh>
+                <MudTh>Unit Cost</MudTh>
+                <MudTh>Status</MudTh>
+                <MudTh>Actions</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="Name">
+                    @context.Name
+                    @if (context.IsLowStock && context.IsActive)
+                    {
+                        <MudIcon Icon="@Icons.Material.Filled.Warning" Color="Color.Warning" Size="Size.Small" />
+                    }
+                </MudTd>
+                <MudTd DataLabel="Code">@context.Code</MudTd>
+                <MudTd DataLabel="Category">@context.Category</MudTd>
+                <MudTd DataLabel="Unit">@context.Unit</MudTd>
+                <MudTd DataLabel="Current Stock">
+                    <MudChip T="string" Size="Size.Small" Color="@(context.IsLowStock ? Color.Error : Color.Default)">
+                        @context.CurrentStock.ToString("N2")
+                    </MudChip>
+                </MudTd>
+                <MudTd DataLabel="Min Stock">@context.MinimumStock.ToString("N2")</MudTd>
+                <MudTd DataLabel="Unit Cost">$@context.UnitCost.ToString("N2")</MudTd>
+                <MudTd DataLabel="Status">
+                    <MudChip T="string" Color="@(context.IsActive ? Color.Success : Color.Default)" Size="Size.Small">
+                        @(context.IsActive ? "Active" : "Inactive")
+                    </MudChip>
+                </MudTd>
+                <MudTd DataLabel="Actions">
+                    <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Color="Color.Info"
+                                   OnClick="@(() => ShowEditForm(context))" Title="Edit" />
+                    <MudIconButton Icon="@Icons.Material.Filled.Add" Size="Size.Small" Color="Color.Success"
+                                   OnClick="@(() => ShowStockInForm(context))" Title="Stock In" />
+                    <MudIconButton Icon="@Icons.Material.Filled.Remove" Size="Size.Small" Color="Color.Warning"
+                                   OnClick="@(() => ShowStockOutForm(context))" Title="Stock Out" />
+                </MudTd>
+            </RowTemplate>
+        </MudTable>
+    }
+    else
+    {
+        <MudAlert Severity="Severity.Info">No materials found. Create your first material!</MudAlert>
+    }
 }
 
-@if (showForm)
-{
-    <div class="modal fade show d-block" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">@(editingMaterial == null ? "New Material" : "Edit Material")</h5>
-                    <button type="button" class="btn-close" @onclick="HideForm"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <label class="form-label">Name</label>
-                        <input type="text" class="form-control" @bind="formModel.Name" />
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Code</label>
-                        <input type="text" class="form-control" @bind="formModel.Code" />
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Unit</label>
-                        <input type="text" class="form-control" @bind="formModel.Unit" placeholder="kg, liters, units, etc." />
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Minimum Stock</label>
-                        <input type="number" class="form-control" @bind="formModel.MinimumStock" step="0.01" />
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Unit Cost</label>
-                        <input type="number" class="form-control" @bind="formModel.UnitCost" step="0.01" />
-                    </div>
-                    @if (editingMaterial != null)
-                    {
-                        <div class="form-check mb-3">
-                            <input class="form-check-input" type="checkbox" @bind="formModel.IsActive" id="isActive" />
-                            <label class="form-check-label" for="isActive">Active</label>
-                        </div>
-                    }
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" @onclick="HideForm">Cancel</button>
-                    <button type="button" class="btn btn-primary" @onclick="SaveMaterial">Save</button>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="modal-backdrop fade show"></div>
-}
+<MudDialog @bind-IsVisible="showForm" Options="dialogOptions">
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            @(editingMaterial == null ? "New Material" : "Edit Material")
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudTextField @bind-Value="formModel.Name" Label="Name" Variant="Variant.Outlined" Class="mb-3" Required="true" />
+        <MudTextField @bind-Value="formModel.Code" Label="Code" Variant="Variant.Outlined" Class="mb-3" Required="true" />
+        <MudTextField @bind-Value="formModel.Unit" Label="Unit (kg, L, pcs)" Variant="Variant.Outlined" Class="mb-3" Required="true" />
+        <MudNumericField @bind-Value="formModel.MinimumStock" Label="Minimum Stock" Variant="Variant.Outlined" Class="mb-3" Min="0" />
+        <MudNumericField @bind-Value="formModel.UnitCost" Label="Unit Cost" Variant="Variant.Outlined" Class="mb-3" Min="0" Format="N2" />
+        @if (editingMaterial != null)
+        {
+            <MudSwitch T="bool" @bind-Checked="formModel.IsActive" Label="Active" Color="Color.Success" />
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="HideForm" Variant="Variant.Text">Cancel</MudButton>
+        <MudButton OnClick="SaveMaterial" Variant="Variant.Filled" Color="Color.Primary">Save</MudButton>
+    </DialogActions>
+</MudDialog>
+
+<MudDialog @bind-IsVisible="showStockForm" Options="dialogOptions">
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            @(isStockIn ? "Stock In" : "Stock Out") - @selectedMaterial?.Name
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudAlert Severity="Severity.Info" Class="mb-3">
+            Current Stock: <strong>@selectedMaterial?.CurrentStock.ToString("N2") @selectedMaterial?.Unit</strong>
+        </MudAlert>
+        <MudNumericField @bind-Value="stockQuantity" Label="Quantity" Variant="Variant.Outlined" Class="mb-3" Min="0" Required="true" />
+        <MudTextField @bind-Value="stockReason" Label="Reason" Variant="Variant.Outlined" Lines="2" />
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="HideStockForm" Variant="Variant.Text">Cancel</MudButton>
+        <MudButton OnClick="SaveStockMovement" Variant="Variant.Filled" Color="@(isStockIn ? Color.Success : Color.Warning)">
+            @(isStockIn ? "Add Stock" : "Remove Stock")
+        </MudButton>
+    </DialogActions>
+</MudDialog>
 
 @code {
     private IEnumerable<RawMaterialDto>? materials;
     private bool showForm = false;
+    private bool showStockForm = false;
+    private bool isStockIn = true;
     private RawMaterialDto? editingMaterial;
+    private RawMaterialDto? selectedMaterial;
     private MaterialFormModel formModel = new();
+    private decimal stockQuantity = 0;
+    private string stockReason = string.Empty;
+    private DialogOptions dialogOptions = new() { MaxWidth = MaxWidth.Small, FullWidth = true };
 
     protected override async Task OnInitializedAsync()
     {
@@ -192,14 +203,46 @@ else
         await LoadMaterials();
     }
 
-    private void ShowStockInForm()
+    private void ShowStockInForm(RawMaterialDto material)
     {
-        // TODO: Implement stock in functionality
+        selectedMaterial = material;
+        isStockIn = true;
+        stockQuantity = 0;
+        stockReason = string.Empty;
+        showStockForm = true;
     }
 
-    private void ShowStockOutForm()
+    private void ShowStockOutForm(RawMaterialDto material)
     {
-        // TODO: Implement stock out functionality
+        selectedMaterial = material;
+        isStockIn = false;
+        stockQuantity = 0;
+        stockReason = string.Empty;
+        showStockForm = true;
+    }
+
+    private void HideStockForm()
+    {
+        showStockForm = false;
+        selectedMaterial = null;
+    }
+
+    private async Task SaveStockMovement()
+    {
+        if (selectedMaterial != null && stockQuantity > 0)
+        {
+            try
+            {
+                await MaterialService.AdjustStockAsync(selectedMaterial.Id, stockQuantity, isStockIn);
+                HideStockForm();
+                await LoadMaterials();
+            }
+            catch (InvalidOperationException)
+            {
+                // Keep dialog open and show error - stock quantity exceeds available stock
+                stockQuantity = selectedMaterial.CurrentStock;
+            }
+        }
     }
 
     private class MaterialFormModel

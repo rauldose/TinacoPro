@@ -100,4 +100,20 @@ public class RawMaterialService
     {
         await _repository.DeleteAsync(id);
     }
+
+    public async Task AdjustStockAsync(int id, decimal quantity, bool isStockIn)
+    {
+        var material = await _repository.GetByIdAsync(id);
+        if (material != null)
+        {
+            if (!isStockIn && material.CurrentStock < quantity)
+            {
+                throw new InvalidOperationException($"Insufficient stock. Current stock: {material.CurrentStock}, Requested: {quantity}");
+            }
+            
+            material.CurrentStock += isStockIn ? quantity : -quantity;
+            material.UpdatedAt = DateTime.UtcNow;
+            await _repository.UpdateAsync(material);
+        }
+    }
 }

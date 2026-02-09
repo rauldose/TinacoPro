@@ -7,133 +7,102 @@
 
 <PageTitle>Production Orders - TinacoPro</PageTitle>
 
-<h1 class="mb-4">Production Orders</h1>
+<MudText Typo="Typo.h4" Class="mb-4">Production Orders</MudText>
 
-<div class="mb-3">
-    <button class="btn btn-primary" @onclick="ShowCreateForm">
-        <i class="bi bi-plus-circle"></i> New Production Order
-    </button>
-</div>
+<MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" 
+           OnClick="ShowCreateForm" Class="mb-4">
+    New Production Order
+</MudButton>
 
 @if (orders == null)
 {
-    <p><em>Loading...</em></p>
+    <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
 }
 else if (orders.Any())
 {
-    <div class="table-responsive">
-        <table class="table table-striped">
-            <thead>
-                <tr>
-                    <th>Order Number</th>
-                    <th>Product</th>
-                    <th>Quantity</th>
-                    <th>Status</th>
-                    <th>Order Date</th>
-                    <th>Completed Date</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var order in orders)
-                {
-                    <tr>
-                        <td>@order.OrderNumber</td>
-                        <td>@order.ProductName</td>
-                        <td>@order.Quantity</td>
-                        <td>
-                            @{
-                                var badgeClass = order.Status switch
-                                {
-                                    "Pending" => "bg-warning",
-                                    "InProgress" => "bg-info",
-                                    "Completed" => "bg-success",
-                                    "Cancelled" => "bg-danger",
-                                    _ => "bg-secondary"
-                                };
-                            }
-                            <span class="badge @badgeClass">@order.Status</span>
-                        </td>
-                        <td>@order.OrderDate.ToString("yyyy-MM-dd")</td>
-                        <td>@(order.CompletedDate?.ToString("yyyy-MM-dd") ?? "-")</td>
-                        <td>
-                            @if (order.Status == "Pending")
-                            {
-                                <button class="btn btn-sm btn-info" @onclick="() => StartOrder(order.Id)">
-                                    <i class="bi bi-play-circle"></i> Start
-                                </button>
-                            }
-                            @if (order.Status == "InProgress")
-                            {
-                                <button class="btn btn-sm btn-success" @onclick="() => CompleteOrder(order.Id)">
-                                    <i class="bi bi-check-circle"></i> Complete
-                                </button>
-                            }
-                            @if (order.Status == "Pending" || order.Status == "InProgress")
-                            {
-                                <button class="btn btn-sm btn-danger" @onclick="() => CancelOrder(order.Id)">
-                                    <i class="bi bi-x-circle"></i> Cancel
-                                </button>
-                            }
-                        </td>
-                    </tr>
+    <MudTable Items="@orders" Hover="true" Striped="true" Dense="true" Elevation="2">
+        <HeaderContent>
+            <MudTh>Order Number</MudTh>
+            <MudTh>Product</MudTh>
+            <MudTh>Quantity</MudTh>
+            <MudTh>Status</MudTh>
+            <MudTh>Order Date</MudTh>
+            <MudTh>Completed Date</MudTh>
+            <MudTh>Actions</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="Order Number">@context.OrderNumber</MudTd>
+            <MudTd DataLabel="Product">@context.ProductName</MudTd>
+            <MudTd DataLabel="Quantity">@context.Quantity</MudTd>
+            <MudTd DataLabel="Status">
+                @{
+                    var chipColor = context.Status switch
+                    {
+                        "Pending" => Color.Warning,
+                        "InProgress" => Color.Info,
+                        "Completed" => Color.Success,
+                        "Cancelled" => Color.Error,
+                        _ => Color.Default
+                    };
                 }
-            </tbody>
-        </table>
-    </div>
+                <MudChip T="string" Color="@chipColor" Size="Size.Small">@context.Status</MudChip>
+            </MudTd>
+            <MudTd DataLabel="Order Date">@context.OrderDate.ToString("yyyy-MM-dd")</MudTd>
+            <MudTd DataLabel="Completed Date">@(context.CompletedDate?.ToString("yyyy-MM-dd") ?? "-")</MudTd>
+            <MudTd DataLabel="Actions">
+                @if (context.Status == "Pending")
+                {
+                    <MudIconButton Icon="@Icons.Material.Filled.PlayArrow" Size="Size.Small" Color="Color.Info"
+                                   OnClick="@(() => StartOrder(context.Id))" Title="Start" />
+                }
+                @if (context.Status == "InProgress")
+                {
+                    <MudIconButton Icon="@Icons.Material.Filled.CheckCircle" Size="Size.Small" Color="Color.Success"
+                                   OnClick="@(() => CompleteOrder(context.Id))" Title="Complete" />
+                }
+                @if (context.Status == "Pending" || context.Status == "InProgress")
+                {
+                    <MudIconButton Icon="@Icons.Material.Filled.Cancel" Size="Size.Small" Color="Color.Error"
+                                   OnClick="@(() => CancelOrder(context.Id))" Title="Cancel" />
+                }
+            </MudTd>
+        </RowTemplate>
+    </MudTable>
 }
 else
 {
-    <div class="alert alert-info">No production orders found. Create your first order!</div>
+    <MudAlert Severity="Severity.Info">No production orders found. Create your first order!</MudAlert>
 }
 
-@if (showForm)
-{
-    <div class="modal fade show d-block" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">New Production Order</h5>
-                    <button type="button" class="btn-close" @onclick="HideForm"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <label class="form-label">Product</label>
-                        <select class="form-select" @bind="formModel.ProductId">
-                            <option value="0">Select a product...</option>
-                            @if (products != null)
-                            {
-                                @foreach (var product in products)
-                                {
-                                    <option value="@product.Id">@product.Name (@product.Model)</option>
-                                }
-                            }
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Quantity</label>
-                        <input type="number" class="form-control" @bind="formModel.Quantity" min="1" />
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Notes</label>
-                        <textarea class="form-control" @bind="formModel.Notes" rows="3"></textarea>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" @onclick="HideForm">Cancel</button>
-                    <button type="button" class="btn btn-primary" @onclick="SaveOrder">Create Order</button>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="modal-backdrop fade show"></div>
-}
+<MudDialog @bind-IsVisible="showForm" Options="dialogOptions">
+    <TitleContent>
+        <MudText Typo="Typo.h6">New Production Order</MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudSelect @bind-Value="formModel.ProductId" Label="Product" Variant="Variant.Outlined" Class="mb-3" Required="true">
+            @if (products != null)
+            {
+                @foreach (var product in products)
+                {
+                    <MudSelectItem Value="@product.Id">@product.Name (@product.Model)</MudSelectItem>
+                }
+            }
+        </MudSelect>
+        <MudNumericField @bind-Value="formModel.Quantity" Label="Quantity" Variant="Variant.Outlined" Class="mb-3" Min="1" Required="true" />
+        <MudTextField @bind-Value="formModel.Notes" Label="Notes" Variant="Variant.Outlined" Lines="3" Class="mb-3" />
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="HideForm" Variant="Variant.Text">Cancel</MudButton>
+        <MudButton OnClick="SaveOrder" Variant="Variant.Filled" Color="Color.Primary">Create Order</MudButton>
+    </DialogActions>
+</MudDialog>
 
 @code {
     private IEnumerable<ProductionOrderDto>? orders;
     private IEnumerable<ProductDto>? products;
     private bool showForm = false;
     private OrderFormModel formModel = new();
+    private DialogOptions dialogOptions = new() { MaxWidth = MaxWidth.Small, FullWidth = true };
 
     protected override async Task OnInitializedAsync()
     {
