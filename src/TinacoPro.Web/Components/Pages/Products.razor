@@ -50,7 +50,7 @@ else
     <MudAlert Severity="Severity.Info">No products found. Create your first product!</MudAlert>
 }
 
-<MudDialog @bind-IsVisible="showForm">
+<MudDialog @bind-Visible="showForm">
     <TitleContent>
         <MudText Typo="Typo.h6">
             @(editingProduct == null ? "New Product" : "Edit Product")

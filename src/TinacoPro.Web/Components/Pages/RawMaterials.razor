@@ -80,7 +80,7 @@ else
     }
 }
 
-<MudDialog @bind-IsVisible="showForm" Options="dialogOptions">
+<MudDialog @bind-Visible="showForm" Options="dialogOptions">
     <TitleContent>
         <MudText Typo="Typo.h6">
             @(editingMaterial == null ? "New Material" : "Edit Material")
@@ -103,7 +103,7 @@ else
     </DialogActions>
 </MudDialog>
 
-<MudDialog @bind-IsVisible="showStockForm" Options="dialogOptions">
+<MudDialog @bind-Visible="showStockForm" Options="dialogOptions">
     <TitleContent>
         <MudText Typo="Typo.h6">
             @(isStockIn ? "Stock In" : "Stock Out") - @selectedMaterial?.Name
