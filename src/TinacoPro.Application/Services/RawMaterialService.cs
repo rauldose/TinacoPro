@@ -100,4 +100,15 @@ public class RawMaterialService
     {
         await _repository.DeleteAsync(id);
     }
+
+    public async Task AdjustStockAsync(int id, decimal quantity, bool isStockIn)
+    {
+        var material = await _repository.GetByIdAsync(id);
+        if (material != null)
+        {
+            material.CurrentStock += isStockIn ? quantity : -quantity;
+            material.UpdatedAt = DateTime.UtcNow;
+            await _repository.UpdateAsync(material);
+        }
+    }
 }

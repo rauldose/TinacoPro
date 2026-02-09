@@ -1,0 +1,200 @@
+@page "/daily-production"
+@rendermode InteractiveServer
+@using TinacoPro.Application.Services
+@using TinacoPro.Application.DTOs
+@inject ProductionOrderService OrderService
+@inject ProductService ProductService
+
+<PageTitle>Daily Production Entry - TinacoPro</PageTitle>
+
+<MudText Typo="Typo.h4" Class="mb-4">Daily Production Entry</MudText>
+
+<MudPaper Class="pa-4 mb-4" Elevation="2">
+    <MudText Typo="Typo.h6" Class="mb-3">Enter Production for Date</MudText>
+    
+    <MudDatePicker @bind-Date="productionDate" Label="Production Date" Variant="Variant.Outlined" Class="mb-4" Required="true" />
+    
+    <MudText Typo="Typo.subtitle1" Class="mb-3"><strong>Enter quantities for each product:</strong></MudText>
+    
+    <MudGrid>
+        <MudItem xs="12" sm="6" md="4">
+            <MudNumericField @bind-Value="quantity450L" Label="450L Tinaco" Variant="Variant.Outlined" Min="0" Adornment="Adornment.End" AdornmentText="units" />
+        </MudItem>
+        <MudItem xs="12" sm="6" md="4">
+            <MudNumericField @bind-Value="quantity750L" Label="750L Tinaco" Variant="Variant.Outlined" Min="0" Adornment="Adornment.End" AdornmentText="units" />
+        </MudItem>
+        <MudItem xs="12" sm="6" md="4">
+            <MudNumericField @bind-Value="quantity1100L" Label="1100L Tinaco" Variant="Variant.Outlined" Min="0" Adornment="Adornment.End" AdornmentText="units" />
+        </MudItem>
+        <MudItem xs="12" sm="6" md="4">
+            <MudNumericField @bind-Value="quantity2500L" Label="2500L Tinaco" Variant="Variant.Outlined" Min="0" Adornment="Adornment.End" AdornmentText="units" />
+        </MudItem>
+        <MudItem xs="12" sm="6" md="4">
+            <MudNumericField @bind-Value="quantity5000L" Label="5000L Tinaco" Variant="Variant.Outlined" Min="0" Adornment="Adornment.End" AdornmentText="units" />
+        </MudItem>
+    </MudGrid>
+    
+    <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Save" 
+               OnClick="SaveDailyProduction" Class="mt-4" Disabled="@(!productionDate.HasValue)">
+        Save Daily Production
+    </MudButton>
+    
+    @if (showSuccessMessage)
+    {
+        <MudAlert Severity="Severity.Success" Class="mt-3" CloseIcon="@Icons.Material.Filled.Close" CloseIconClicked="@(() => showSuccessMessage = false)">
+            Production orders created successfully for @ordersCreated product(s)!
+        </MudAlert>
+    }
+</MudPaper>
+
+<MudText Typo="Typo.h5" Class="mb-3">Historical Daily Production</MudText>
+
+@if (historicalOrders == null)
+{
+    <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+}
+else if (historicalOrders.Any())
+{
+    <MudTable Items="@historicalOrders" Hover="true" Striped="true" Dense="true" Elevation="2" GroupBy="@_groupDefinition">
+        <HeaderContent>
+            <MudTh>Product</MudTh>
+            <MudTh>Quantity</MudTh>
+            <MudTh>Status</MudTh>
+            <MudTh>Order Number</MudTh>
+        </HeaderContent>
+        <GroupHeaderTemplate>
+            <MudTh Class="mud-table-cell-custom-group" colspan="5">
+                <MudText Typo="Typo.h6">
+                    <MudIcon Icon="@Icons.Material.Filled.CalendarToday" Size="Size.Small" /> 
+                    @context.Key
+                </MudText>
+            </MudTh>
+        </GroupHeaderTemplate>
+        <RowTemplate>
+            <MudTd DataLabel="Product">@context.ProductName</MudTd>
+            <MudTd DataLabel="Quantity">@context.Quantity</MudTd>
+            <MudTd DataLabel="Status">
+                @{
+                    var chipColor = context.Status switch
+                    {
+                        "Pending" => Color.Warning,
+                        "InProgress" => Color.Info,
+                        "Completed" => Color.Success,
+                        "Cancelled" => Color.Error,
+                        _ => Color.Default
+                    };
+                }
+                <MudChip T="string" Color="@chipColor" Size="Size.Small">@context.Status</MudChip>
+            </MudTd>
+            <MudTd DataLabel="Order Number">@context.OrderNumber</MudTd>
+        </RowTemplate>
+    </MudTable>
+}
+else
+{
+    <MudAlert Severity="Severity.Info">No production history found. Start by entering your first daily production!</MudAlert>
+}
+
+@code {
+    private DateTime? productionDate = DateTime.Today;
+    private int quantity450L = 0;
+    private int quantity750L = 0;
+    private int quantity1100L = 0;
+    private int quantity2500L = 0;
+    private int quantity5000L = 0;
+    private bool showSuccessMessage = false;
+    private int ordersCreated = 0;
+    
+    private IEnumerable<ProductionOrderDto>? historicalOrders;
+    private IEnumerable<ProductDto>? products;
+    private Dictionary<string, int> productCapacityToId = new();
+    
+    private TableGroupDefinition<ProductionOrderDto> _groupDefinition = new()
+    {
+        GroupName = "Date",
+        Indentation = false,
+        Expandable = true,
+        IsInitiallyExpanded = false,
+        Selector = (e) => e.OrderDate.ToString("yyyy-MM-dd")
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadProducts();
+        await LoadHistoricalOrders();
+    }
+
+    private async Task LoadProducts()
+    {
+        products = await ProductService.GetAllProductsAsync();
+        
+        // Map product capacities to IDs for quick lookup
+        if (products != null)
+        {
+            foreach (var product in products)
+            {
+                var capacity = product.Capacity.ToString("0");
+                if (!productCapacityToId.ContainsKey(capacity))
+                {
+                    productCapacityToId[capacity] = product.Id;
+                }
+            }
+        }
+    }
+
+    private async Task LoadHistoricalOrders()
+    {
+        var allOrders = await OrderService.GetAllOrdersAsync();
+        historicalOrders = allOrders.OrderByDescending(o => o.OrderDate);
+    }
+
+    private async Task SaveDailyProduction()
+    {
+        if (!productionDate.HasValue)
+            return;
+
+        ordersCreated = 0;
+        showSuccessMessage = false;
+
+        var quantities = new Dictionary<string, int>
+        {
+            { "450", quantity450L },
+            { "750", quantity750L },
+            { "1100", quantity1100L },
+            { "2500", quantity2500L },
+            { "5000", quantity5000L }
+        };
+
+        foreach (var kvp in quantities)
+        {
+            if (kvp.Value > 0 && productCapacityToId.TryGetValue(kvp.Key, out var productId))
+            {
+                var createDto = new CreateProductionOrderDto
+                {
+                    ProductId = productId,
+                    Quantity = kvp.Value,
+                    Notes = $"Daily production entry for {productionDate.Value:yyyy-MM-dd}"
+                };
+                
+                await OrderService.CreateOrderAsync(createDto);
+                ordersCreated++;
+            }
+        }
+
+        if (ordersCreated > 0)
+        {
+            showSuccessMessage = true;
+            
+            // Reset form
+            quantity450L = 0;
+            quantity750L = 0;
+            quantity1100L = 0;
+            quantity2500L = 0;
+            quantity5000L = 0;
+            productionDate = DateTime.Today;
+            
+            // Reload historical orders
+            await LoadHistoricalOrders();
+        }
+    }
+}

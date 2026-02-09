@@ -6,103 +6,93 @@
 
 <PageTitle>Suppliers - TinacoPro</PageTitle>
 
-<h1 class="mb-4">Suppliers</h1>
+<MudText Typo="Typo.h4" Class="mb-4">Suppliers</MudText>
 
-<div class="mb-3">
-    <button class="btn btn-primary" @onclick="ShowCreateForm">
-        <i class="bi bi-plus-circle"></i> New Supplier
-    </button>
-</div>
+<MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" 
+           OnClick="ShowCreateForm" Class="mb-4">
+    New Supplier
+</MudButton>
 
 @if (suppliers == null)
 {
-    <p><em>Loading...</em></p>
+    <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
 }
 else if (suppliers.Any())
 {
-    <div class="row">
+    <MudGrid>
         @foreach (var supplier in suppliers)
         {
-            <div class="col-md-4 mb-3">
-                <div class="card">
-                    <div class="card-header d-flex justify-content-between align-items-center">
-                        <h5 class="mb-0">@supplier.Name</h5>
-                        <span class="badge @(supplier.IsActive ? "bg-success" : "bg-secondary")">
-                            @(supplier.IsActive ? "Active" : "Inactive")
-                        </span>
-                    </div>
-                    <div class="card-body">
-                        <p class="mb-2"><strong>Contact:</strong> @supplier.ContactName</p>
-                        <p class="mb-2"><strong>Phone:</strong> @supplier.Phone</p>
-                        <p class="mb-2"><strong>Email:</strong> @supplier.Email</p>
-                        <p class="mb-2"><strong>Address:</strong> @supplier.Address</p>
-                        <button class="btn btn-sm btn-info" @onclick="() => ShowEditForm(supplier)">
-                            <i class="bi bi-pencil"></i> Edit
-                        </button>
-                    </div>
-                </div>
-            </div>
+            <MudItem xs="12" sm="6" md="4">
+                <MudCard Elevation="2">
+                    <MudCardHeader>
+                        <CardHeaderContent>
+                            <MudText Typo="Typo.h6">@supplier.Name</MudText>
+                            <MudChip T="string" Size="Size.Small" Color="@(supplier.IsActive ? Color.Success : Color.Default)">
+                                @(supplier.IsActive ? "Active" : "Inactive")
+                            </MudChip>
+                        </CardHeaderContent>
+                    </MudCardHeader>
+                    <MudCardContent>
+                        <MudText Typo="Typo.body2" Class="mb-2">
+                            <MudIcon Icon="@Icons.Material.Filled.Person" Size="Size.Small" /> 
+                            <strong>Contact:</strong> @supplier.ContactName
+                        </MudText>
+                        <MudText Typo="Typo.body2" Class="mb-2">
+                            <MudIcon Icon="@Icons.Material.Filled.Phone" Size="Size.Small" /> 
+                            <strong>Phone:</strong> @supplier.Phone
+                        </MudText>
+                        <MudText Typo="Typo.body2" Class="mb-2">
+                            <MudIcon Icon="@Icons.Material.Filled.Email" Size="Size.Small" /> 
+                            <strong>Email:</strong> @supplier.Email
+                        </MudText>
+                        <MudText Typo="Typo.body2">
+                            <MudIcon Icon="@Icons.Material.Filled.LocationOn" Size="Size.Small" /> 
+                            <strong>Address:</strong> @supplier.Address
+                        </MudText>
+                    </MudCardContent>
+                    <MudCardActions>
+                        <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Info"
+                                       OnClick="@(() => ShowEditForm(supplier))" Title="Edit" />
+                    </MudCardActions>
+                </MudCard>
+            </MudItem>
         }
-    </div>
+    </MudGrid>
 }
 else
 {
-    <div class="alert alert-info">No suppliers found. Create your first supplier!</div>
+    <MudAlert Severity="Severity.Info">No suppliers found. Create your first supplier!</MudAlert>
 }
 
-@if (showForm)
-{
-    <div class="modal fade show d-block" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">@(editingSupplier == null ? "New Supplier" : "Edit Supplier")</h5>
-                    <button type="button" class="btn-close" @onclick="HideForm"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <label class="form-label">Name</label>
-                        <input type="text" class="form-control" @bind="formModel.Name" />
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Contact Name</label>
-                        <input type="text" class="form-control" @bind="formModel.ContactName" />
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Phone</label>
-                        <input type="text" class="form-control" @bind="formModel.Phone" />
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Email</label>
-                        <input type="email" class="form-control" @bind="formModel.Email" />
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Address</label>
-                        <textarea class="form-control" @bind="formModel.Address" rows="3"></textarea>
-                    </div>
-                    @if (editingSupplier != null)
-                    {
-                        <div class="form-check mb-3">
-                            <input class="form-check-input" type="checkbox" @bind="formModel.IsActive" id="isActive" />
-                            <label class="form-check-label" for="isActive">Active</label>
-                        </div>
-                    }
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" @onclick="HideForm">Cancel</button>
-                    <button type="button" class="btn btn-primary" @onclick="SaveSupplier">Save</button>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="modal-backdrop fade show"></div>
-}
+<MudDialog @bind-IsVisible="showForm" Options="dialogOptions">
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            @(editingSupplier == null ? "New Supplier" : "Edit Supplier")
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudTextField @bind-Value="formModel.Name" Label="Company Name" Variant="Variant.Outlined" Class="mb-3" Required="true" />
+        <MudTextField @bind-Value="formModel.ContactName" Label="Contact Name" Variant="Variant.Outlined" Class="mb-3" Required="true" />
+        <MudTextField @bind-Value="formModel.Phone" Label="Phone" Variant="Variant.Outlined" Class="mb-3" />
+        <MudTextField @bind-Value="formModel.Email" Label="Email" Variant="Variant.Outlined" Class="mb-3" InputType="InputType.Email" />
+        <MudTextField @bind-Value="formModel.Address" Label="Address" Variant="Variant.Outlined" Lines="3" Class="mb-3" />
+        @if (editingSupplier != null)
+        {
+            <MudSwitch T="bool" @bind-Checked="formModel.IsActive" Label="Active" Color="Color.Success" />
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="HideForm" Variant="Variant.Text">Cancel</MudButton>
+        <MudButton OnClick="SaveSupplier" Variant="Variant.Filled" Color="Color.Primary">Save</MudButton>
+    </DialogActions>
+</MudDialog>
 
 @code {
     private IEnumerable<SupplierDto>? suppliers;
     private bool showForm = false;
     private SupplierDto? editingSupplier;
     private SupplierFormModel formModel = new();
+    private DialogOptions dialogOptions = new() { MaxWidth = MaxWidth.Small, FullWidth = true };
 
     protected override async Task OnInitializedAsync()
     {
