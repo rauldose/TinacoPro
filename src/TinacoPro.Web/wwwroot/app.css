@@ -29,11 +29,24 @@ html, body {
 /* Force dark theme on MudBlazor main content */
 .mud-main-content {
     background-color: var(--bg-primary) !important;
+    color: var(--text-primary) !important;
 }
 
 /* Force dark theme on all page surfaces */
-.mud-layout {
+.mud-layout,
+.mud-layout > *,
+body .mud-layout {
     background-color: var(--bg-primary) !important;
+}
+
+/* MudBlazor container and content areas */
+.mud-container,
+.mud-container-maxwidth-false,
+.mud-grid,
+article,
+.page {
+    background-color: transparent !important;
+    color: var(--text-primary) !important;
 }
 
 /* Ensure dialogs and modals use dark theme */
@@ -41,6 +54,28 @@ html, body {
 .mud-dialog,
 .mud-paper {
     background-color: var(--bg-secondary) !important;
+    color: var(--text-primary) !important;
+}
+
+/* MudBlazor specific overrides for dark theme */
+.mud-theme-dark .mud-main-content,
+.mud-theme-dark,
+body.mud-theme-dark {
+    background-color: var(--bg-primary) !important;
+}
+
+/* Override any MudBlazor default backgrounds */
+.mud-theme-dark .mud-paper,
+.mud-theme-dark .mud-card {
+    background-color: var(--bg-secondary) !important;
+}
+
+/* Fix table backgrounds in dark mode */
+.mud-theme-dark .mud-table {
+    background-color: var(--bg-secondary) !important;
+}
+
+.mud-theme-dark .mud-table-cell {
     color: var(--text-primary) !important;
 }
 
