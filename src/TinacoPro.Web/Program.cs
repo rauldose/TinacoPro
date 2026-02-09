@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using MudBlazor.Services;
 using TinacoPro.Application.Services;
 using TinacoPro.Domain.Interfaces;
 using TinacoPro.Infrastructure.Data;
@@ -10,6 +11,9 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
+
+// Add MudBlazor services
+builder.Services.AddMudServices();
 
 // Configure SQLite database
 builder.Services.AddDbContext<TinacoProDbContext>(options =>

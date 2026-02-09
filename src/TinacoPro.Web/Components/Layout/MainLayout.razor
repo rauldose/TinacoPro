@@ -1,23 +1,57 @@
 ﻿@inherits LayoutComponentBase
 
-<div class="page">
-    <div class="sidebar">
+<MudThemeProvider Theme="@_theme" IsDarkMode="true" />
+<MudDialogProvider />
+<MudSnackbarProvider />
+
+<MudLayout>
+    <MudAppBar Elevation="1" Dense="true">
+        <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@((e) => DrawerToggle())" />
+        <MudText Typo="Typo.h6" Class="ml-3">TinacoPro</MudText>
+        <MudSpacer />
+        <MudIconButton Icon="@Icons.Material.Filled.Info" Color="Color.Inherit" Href="https://learn.microsoft.com/aspnet/core/" Target="_blank" />
+    </MudAppBar>
+    <MudDrawer @bind-Open="@_drawerOpen" Elevation="2" ClipMode="DrawerClipMode.Always">
         <NavMenu />
-    </div>
+    </MudDrawer>
+    <MudMainContent Class="mt-16 pa-4">
+        @Body
+    </MudMainContent>
+</MudLayout>
 
-    <main>
-        <div class="top-row px-4">
-            <a href="https://learn.microsoft.com/aspnet/core/" target="_blank">About</a>
-        </div>
+@code {
+    private bool _drawerOpen = true;
 
-        <article class="content px-4">
-            @Body
-        </article>
-    </main>
-</div>
+    private MudTheme _theme = new MudTheme()
+    {
+        PaletteDark = new PaletteDark()
+        {
+            Primary = "#60a5fa",
+            Secondary = "#c084fc",
+            Success = "#34d399",
+            Warning = "#fbbf24",
+            Error = "#f87171",
+            Info = "#22d3ee",
+            Background = "#09090b",
+            BackgroundGray = "#111214",
+            Surface = "#111214",
+            DrawerBackground = "#0a0a0b",
+            DrawerText = "#e5e5e5",
+            AppbarBackground = "#0a0a0b",
+            AppbarText = "#e5e5e5",
+            TextPrimary = "#e5e5e5",
+            TextSecondary = "#888888",
+            ActionDefault = "#e5e5e5",
+            ActionDisabled = "#666666",
+            Divider = "#222222",
+            DividerLight = "#1a1a1a",
+            LinesDefault = "#222222",
+            LinesInputs = "#222222",
+        }
+    };
 
-<div id="blazor-error-ui" data-nosnippet>
-    An unhandled error has occurred.
-    <a href="." class="reload">Reload</a>
-    <span class="dismiss">🗙</span>
-</div>
+    private void DrawerToggle()
+    {
+        _drawerOpen = !_drawerOpen;
+    }
+}
