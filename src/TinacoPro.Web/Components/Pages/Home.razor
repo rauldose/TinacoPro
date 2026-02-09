@@ -1,11 +1,14 @@
 @page "/"
 @rendermode InteractiveServer
 @using TinacoPro.Application.Services
+@using TinacoPro.Web.Services
 @inject DashboardService DashboardService
+@inject LocalizationService Localization
+@implements IDisposable
 
-<PageTitle>Dashboard - TinacoPro</PageTitle>
+<PageTitle>@Localization.Translate("Dashboard") - TinacoPro</PageTitle>
 
-<MudText Typo="Typo.h4" Class="mb-4">Dashboard</MudText>
+<MudText Typo="Typo.h4" Class="mb-4">@Localization.Translate("Dashboard")</MudText>
 
 @if (dashboard == null)
 {
@@ -19,9 +22,9 @@ else
                 <MudCardContent>
                     <div class="d-flex justify-space-between align-center">
                         <div>
-                            <MudText Typo="Typo.caption" Color="Color.Primary">Products</MudText>
+                            <MudText Typo="Typo.caption" Color="Color.Primary">@Localization.Translate("Products")</MudText>
                             <MudText Typo="Typo.h4">@dashboard.ActiveProducts / @dashboard.TotalProducts</MudText>
-                            <MudText Typo="Typo.body2" Color="Color.Secondary">Active Products</MudText>
+                            <MudText Typo="Typo.body2" Color="Color.Secondary">@Localization.Translate("ActiveProducts")</MudText>
                         </div>
                         <MudIcon Icon="@Icons.Material.Filled.Inventory2" Color="Color.Primary" Size="Size.Large" />
                     </div>
@@ -34,9 +37,9 @@ else
                 <MudCardContent>
                     <div class="d-flex justify-space-between align-center">
                         <div>
-                            <MudText Typo="Typo.caption" Color="Color.Warning">Raw Materials</MudText>
+                            <MudText Typo="Typo.caption" Color="Color.Warning">@Localization.Translate("RawMaterials")</MudText>
                             <MudText Typo="Typo.h4">@dashboard.LowStockMaterials</MudText>
-                            <MudText Typo="Typo.body2" Color="Color.Secondary">Low Stock Items</MudText>
+                            <MudText Typo="Typo.body2" Color="Color.Secondary">@Localization.Translate("LowStockItems")</MudText>
                         </div>
                         <MudIcon Icon="@Icons.Material.Filled.Warning" Color="Color.Warning" Size="Size.Large" />
                     </div>
@@ -50,9 +53,9 @@ else
                 <MudCardContent>
                     <div class="d-flex justify-space-between align-center">
                         <div>
-                            <MudText Typo="Typo.caption" Color="Color.Info">Production Orders</MudText>
+                            <MudText Typo="Typo.caption" Color="Color.Info">@Localization.Translate("ProductionOrders")</MudText>
                             <MudText Typo="Typo.h4">@dashboard.InProgressOrders</MudText>
-                            <MudText Typo="Typo.body2" Color="Color.Secondary">In Progress</MudText>
+                            <MudText Typo="Typo.body2" Color="Color.Secondary">@Localization.Translate("InProgress")</MudText>
                         </div>
                         <MudIcon Icon="@Icons.Material.Filled.Build" Color="Color.Info" Size="Size.Large" />
                     </div>
@@ -66,9 +69,9 @@ else
                 <MudCardContent>
                     <div class="d-flex justify-space-between align-center">
                         <div>
-                            <MudText Typo="Typo.caption" Color="Color.Success">Completed Today</MudText>
+                            <MudText Typo="Typo.caption" Color="Color.Success">@Localization.Translate("CompletedToday")</MudText>
                             <MudText Typo="Typo.h4">@dashboard.CompletedOrdersToday</MudText>
-                            <MudText Typo="Typo.body2" Color="Color.Secondary">Orders</MudText>
+                            <MudText Typo="Typo.body2" Color="Color.Secondary">@Localization.Translate("Orders")</MudText>
                         </div>
                         <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" Size="Size.Large" />
                     </div>
@@ -82,7 +85,7 @@ else
             <MudCard Elevation="3">
                 <MudCardHeader>
                     <CardHeaderContent>
-                        <MudText Typo="Typo.h6">Production Overview</MudText>
+                        <MudText Typo="Typo.h6">@Localization.Translate("ProductionOverview")</MudText>
                     </CardHeaderContent>
                     <CardHeaderActions>
                         <MudIconButton Icon="@Icons.Material.Filled.Assessment" Color="Color.Primary" />
@@ -92,28 +95,28 @@ else
                     <MudStack Spacing="3">
                         <div>
                             <div class="d-flex justify-space-between mb-1">
-                                <MudText Typo="Typo.body2">Pending Orders</MudText>
+                                <MudText Typo="Typo.body2">@Localization.Translate("PendingOrders")</MudText>
                                 <MudChip T="string" Size="Size.Small" Color="Color.Default">@dashboard.PendingOrders</MudChip>
                             </div>
                             <MudProgressLinear Color="Color.Default" Value="@GetPendingPercentage()" />
                         </div>
                         <div>
                             <div class="d-flex justify-space-between mb-1">
-                                <MudText Typo="Typo.body2">In Progress</MudText>
+                                <MudText Typo="Typo.body2">@Localization.Translate("InProgress")</MudText>
                                 <MudChip T="string" Size="Size.Small" Color="Color.Info">@dashboard.InProgressOrders</MudChip>
                             </div>
                             <MudProgressLinear Color="Color.Info" Value="@GetProgressPercentage()" />
                         </div>
                         <div>
                             <div class="d-flex justify-space-between mb-1">
-                                <MudText Typo="Typo.body2">Completed This Week</MudText>
+                                <MudText Typo="Typo.body2">@Localization.Translate("CompletedThisWeek")</MudText>
                                 <MudChip T="string" Size="Size.Small" Color="Color.Success">@dashboard.CompletedOrdersThisWeek</MudChip>
                             </div>
                             <MudProgressLinear Color="Color.Success" Value="@GetWeeklyCompletionPercentage()" />
                         </div>
                         <div>
                             <div class="d-flex justify-space-between mb-1">
-                                <MudText Typo="Typo.body2">Completed This Month</MudText>
+                                <MudText Typo="Typo.body2">@Localization.Translate("CompletedThisMonth")</MudText>
                                 <MudChip T="string" Size="Size.Small" Color="Color.Success">@dashboard.CompletedOrdersThisMonth</MudChip>
                             </div>
                             <MudProgressLinear Color="Color.Success" Value="@GetMonthlyCompletionPercentage()" />
@@ -127,7 +130,7 @@ else
             <MudCard Elevation="3">
                 <MudCardHeader>
                     <CardHeaderContent>
-                        <MudText Typo="Typo.h6">Inventory Status</MudText>
+                        <MudText Typo="Typo.h6">@Localization.Translate("InventoryStatus")</MudText>
                     </CardHeaderContent>
                     <CardHeaderActions>
                         <MudIconButton Icon="@Icons.Material.Filled.Warehouse" Color="Color.Primary" />
@@ -137,14 +140,14 @@ else
                     <MudStack Spacing="3">
                         <div>
                             <div class="d-flex justify-space-between mb-1">
-                                <MudText Typo="Typo.body2">Total Raw Materials</MudText>
+                                <MudText Typo="Typo.body2">@Localization.Translate("TotalRawMaterials")</MudText>
                                 <MudChip T="string" Size="Size.Small" Color="Color.Primary">@dashboard.TotalRawMaterials</MudChip>
                             </div>
                         </div>
                         <MudDivider />
                         <div>
                             <div class="d-flex justify-space-between mb-1">
-                                <MudText Typo="Typo.body2">Low Stock Items</MudText>
+                                <MudText Typo="Typo.body2">@Localization.Translate("LowStockItems")</MudText>
                                 <MudChip T="string" Size="Size.Small" Color="@(dashboard.LowStockMaterials > 0 ? Color.Error : Color.Success)">
                                     @dashboard.LowStockMaterials
                                 </MudChip>
@@ -157,13 +160,13 @@ else
                         @if (dashboard.LowStockMaterials > 0)
                         {
                             <MudAlert Severity="Severity.Warning" Variant="Variant.Filled" Dense="true">
-                                <strong>@dashboard.LowStockMaterials</strong> materials are running low. Please check raw materials inventory.
+                                <strong>@dashboard.LowStockMaterials</strong> @Localization.Translate("MaterialsRunningLow")
                             </MudAlert>
                         }
                         else
                         {
                             <MudAlert Severity="Severity.Success" Variant="Variant.Filled" Dense="true">
-                                All materials are adequately stocked.
+                                @Localization.Translate("AllMaterialsStocked")
                             </MudAlert>
                         }
                     </MudStack>
@@ -178,7 +181,19 @@ else
 
     protected override async Task OnInitializedAsync()
     {
+        await Localization.InitializeAsync();
+        Localization.OnLanguageChanged += HandleLanguageChanged;
         dashboard = await DashboardService.GetDashboardDataAsync();
+    }
+
+    private async void HandleLanguageChanged()
+    {
+        await InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        Localization.OnLanguageChanged -= HandleLanguageChanged;
     }
 
     private double GetLowStockPercentage()
