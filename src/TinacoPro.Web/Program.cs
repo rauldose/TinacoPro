@@ -5,6 +5,7 @@ using TinacoPro.Domain.Interfaces;
 using TinacoPro.Infrastructure.Data;
 using TinacoPro.Infrastructure.Repositories;
 using TinacoPro.Web.Components;
+using TinacoPro.Web.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -14,6 +15,9 @@ builder.Services.AddRazorComponents()
 
 // Add MudBlazor services
 builder.Services.AddMudServices();
+
+// Add Localization service
+builder.Services.AddScoped<LocalizationService>();
 
 // Configure SQLite database
 builder.Services.AddDbContext<TinacoProDbContext>(options =>
