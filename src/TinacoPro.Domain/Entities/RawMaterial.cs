@@ -2,11 +2,20 @@ using TinacoPro.Domain.Common;
 
 namespace TinacoPro.Domain.Entities;
 
+public enum MaterialCategory
+{
+    Resina,
+    Aditivo,
+    Accesorio,
+    Empaque
+}
+
 public class RawMaterial : BaseEntity
 {
     public string Name { get; set; } = string.Empty;
     public string Code { get; set; } = string.Empty;
-    public string Unit { get; set; } = string.Empty; // kg, liters, units, etc.
+    public string Unit { get; set; } = string.Empty; // kg, liters, pz (pieces), rollo (roll), etc.
+    public MaterialCategory Category { get; set; } = MaterialCategory.Resina;
     public decimal CurrentStock { get; set; }
     public decimal MinimumStock { get; set; }
     public decimal UnitCost { get; set; }
