@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/TinacoPro.Application/TinacoPro.Application.csproj" />
+    <Project Path="src/TinacoPro.Domain/TinacoPro.Domain.csproj" />
+    <Project Path="src/TinacoPro.Infrastructure/TinacoPro.Infrastructure.csproj" />
+    <Project Path="src/TinacoPro.Web/TinacoPro.Web.csproj" />
+  </Folder>
+</Solution>

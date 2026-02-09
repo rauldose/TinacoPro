@@ -1,0 +1,220 @@
+@page "/raw-materials"
+@rendermode InteractiveServer
+@using TinacoPro.Application.Services
+@using TinacoPro.Application.DTOs
+@inject RawMaterialService MaterialService
+
+<PageTitle>Raw Materials - TinacoPro</PageTitle>
+
+<h1 class="mb-4">Raw Materials Inventory</h1>
+
+<div class="mb-3">
+    <button class="btn btn-primary" @onclick="ShowCreateForm">
+        <i class="bi bi-plus-circle"></i> New Material
+    </button>
+    <button class="btn btn-success ms-2" @onclick="ShowStockInForm">
+        <i class="bi bi-arrow-down-circle"></i> Stock In
+    </button>
+    <button class="btn btn-warning ms-2" @onclick="ShowStockOutForm">
+        <i class="bi bi-arrow-up-circle"></i> Stock Out
+    </button>
+</div>
+
+@if (materials == null)
+{
+    <p><em>Loading...</em></p>
+}
+else if (materials.Any())
+{
+    <div class="table-responsive">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Code</th>
+                    <th>Unit</th>
+                    <th>Current Stock</th>
+                    <th>Minimum Stock</th>
+                    <th>Unit Cost</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var material in materials)
+                {
+                    <tr class="@(material.IsLowStock ? "table-warning" : "")">
+                        <td>@material.Name</td>
+                        <td>@material.Code</td>
+                        <td>@material.Unit</td>
+                        <td>
+                            @material.CurrentStock
+                            @if (material.IsLowStock)
+                            {
+                                <i class="bi bi-exclamation-triangle text-warning"></i>
+                            }
+                        </td>
+                        <td>@material.MinimumStock</td>
+                        <td>$@material.UnitCost.ToString("F2")</td>
+                        <td>
+                            <span class="badge @(material.IsActive ? "bg-success" : "bg-secondary")">
+                                @(material.IsActive ? "Active" : "Inactive")
+                            </span>
+                        </td>
+                        <td>
+                            <button class="btn btn-sm btn-info" @onclick="() => ShowEditForm(material)">
+                                <i class="bi bi-pencil"></i> Edit
+                            </button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+else
+{
+    <div class="alert alert-info">No raw materials found. Create your first material!</div>
+}
+
+@if (showForm)
+{
+    <div class="modal fade show d-block" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">@(editingMaterial == null ? "New Material" : "Edit Material")</h5>
+                    <button type="button" class="btn-close" @onclick="HideForm"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Name</label>
+                        <input type="text" class="form-control" @bind="formModel.Name" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Code</label>
+                        <input type="text" class="form-control" @bind="formModel.Code" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Unit</label>
+                        <input type="text" class="form-control" @bind="formModel.Unit" placeholder="kg, liters, units, etc." />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Minimum Stock</label>
+                        <input type="number" class="form-control" @bind="formModel.MinimumStock" step="0.01" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Unit Cost</label>
+                        <input type="number" class="form-control" @bind="formModel.UnitCost" step="0.01" />
+                    </div>
+                    @if (editingMaterial != null)
+                    {
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" @bind="formModel.IsActive" id="isActive" />
+                            <label class="form-check-label" for="isActive">Active</label>
+                        </div>
+                    }
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="HideForm">Cancel</button>
+                    <button type="button" class="btn btn-primary" @onclick="SaveMaterial">Save</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal-backdrop fade show"></div>
+}
+
+@code {
+    private IEnumerable<RawMaterialDto>? materials;
+    private bool showForm = false;
+    private RawMaterialDto? editingMaterial;
+    private MaterialFormModel formModel = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadMaterials();
+    }
+
+    private async Task LoadMaterials()
+    {
+        materials = await MaterialService.GetAllMaterialsAsync();
+    }
+
+    private void ShowCreateForm()
+    {
+        editingMaterial = null;
+        formModel = new MaterialFormModel();
+        showForm = true;
+    }
+
+    private void ShowEditForm(RawMaterialDto material)
+    {
+        editingMaterial = material;
+        formModel = new MaterialFormModel
+        {
+            Name = material.Name,
+            Code = material.Code,
+            Unit = material.Unit,
+            MinimumStock = material.MinimumStock,
+            UnitCost = material.UnitCost,
+            IsActive = material.IsActive
+        };
+        showForm = true;
+    }
+
+    private void HideForm()
+    {
+        showForm = false;
+        editingMaterial = null;
+    }
+
+    private async Task SaveMaterial()
+    {
+        if (editingMaterial == null)
+        {
+            var createDto = new CreateRawMaterialDto
+            {
+                Name = formModel.Name,
+                Code = formModel.Code,
+                Unit = formModel.Unit,
+                MinimumStock = formModel.MinimumStock,
+                UnitCost = formModel.UnitCost
+            };
+            await MaterialService.CreateMaterialAsync(createDto);
+        }
+        else
+        {
+            editingMaterial.Name = formModel.Name;
+            editingMaterial.Code = formModel.Code;
+            editingMaterial.Unit = formModel.Unit;
+            editingMaterial.MinimumStock = formModel.MinimumStock;
+            editingMaterial.UnitCost = formModel.UnitCost;
+            editingMaterial.IsActive = formModel.IsActive;
+            await MaterialService.UpdateMaterialAsync(editingMaterial);
+        }
+        
+        HideForm();
+        await LoadMaterials();
+    }
+
+    private void ShowStockInForm()
+    {
+        // TODO: Implement stock in functionality
+    }
+
+    private void ShowStockOutForm()
+    {
+        // TODO: Implement stock out functionality
+    }
+
+    private class MaterialFormModel
+    {
+        public string Name { get; set; } = string.Empty;
+        public string Code { get; set; } = string.Empty;
+        public string Unit { get; set; } = string.Empty;
+        public decimal MinimumStock { get; set; }
+        public decimal UnitCost { get; set; }
+        public bool IsActive { get; set; } = true;
+    }
+}

@@ -1,0 +1,200 @@
+@page "/production-orders"
+@rendermode InteractiveServer
+@using TinacoPro.Application.Services
+@using TinacoPro.Application.DTOs
+@inject ProductionOrderService OrderService
+@inject ProductService ProductService
+
+<PageTitle>Production Orders - TinacoPro</PageTitle>
+
+<h1 class="mb-4">Production Orders</h1>
+
+<div class="mb-3">
+    <button class="btn btn-primary" @onclick="ShowCreateForm">
+        <i class="bi bi-plus-circle"></i> New Production Order
+    </button>
+</div>
+
+@if (orders == null)
+{
+    <p><em>Loading...</em></p>
+}
+else if (orders.Any())
+{
+    <div class="table-responsive">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Order Number</th>
+                    <th>Product</th>
+                    <th>Quantity</th>
+                    <th>Status</th>
+                    <th>Order Date</th>
+                    <th>Completed Date</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var order in orders)
+                {
+                    <tr>
+                        <td>@order.OrderNumber</td>
+                        <td>@order.ProductName</td>
+                        <td>@order.Quantity</td>
+                        <td>
+                            @{
+                                var badgeClass = order.Status switch
+                                {
+                                    "Pending" => "bg-warning",
+                                    "InProgress" => "bg-info",
+                                    "Completed" => "bg-success",
+                                    "Cancelled" => "bg-danger",
+                                    _ => "bg-secondary"
+                                };
+                            }
+                            <span class="badge @badgeClass">@order.Status</span>
+                        </td>
+                        <td>@order.OrderDate.ToString("yyyy-MM-dd")</td>
+                        <td>@(order.CompletedDate?.ToString("yyyy-MM-dd") ?? "-")</td>
+                        <td>
+                            @if (order.Status == "Pending")
+                            {
+                                <button class="btn btn-sm btn-info" @onclick="() => StartOrder(order.Id)">
+                                    <i class="bi bi-play-circle"></i> Start
+                                </button>
+                            }
+                            @if (order.Status == "InProgress")
+                            {
+                                <button class="btn btn-sm btn-success" @onclick="() => CompleteOrder(order.Id)">
+                                    <i class="bi bi-check-circle"></i> Complete
+                                </button>
+                            }
+                            @if (order.Status == "Pending" || order.Status == "InProgress")
+                            {
+                                <button class="btn btn-sm btn-danger" @onclick="() => CancelOrder(order.Id)">
+                                    <i class="bi bi-x-circle"></i> Cancel
+                                </button>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+else
+{
+    <div class="alert alert-info">No production orders found. Create your first order!</div>
+}
+
+@if (showForm)
+{
+    <div class="modal fade show d-block" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">New Production Order</h5>
+                    <button type="button" class="btn-close" @onclick="HideForm"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Product</label>
+                        <select class="form-select" @bind="formModel.ProductId">
+                            <option value="0">Select a product...</option>
+                            @if (products != null)
+                            {
+                                @foreach (var product in products)
+                                {
+                                    <option value="@product.Id">@product.Name (@product.Model)</option>
+                                }
+                            }
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Quantity</label>
+                        <input type="number" class="form-control" @bind="formModel.Quantity" min="1" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Notes</label>
+                        <textarea class="form-control" @bind="formModel.Notes" rows="3"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="HideForm">Cancel</button>
+                    <button type="button" class="btn btn-primary" @onclick="SaveOrder">Create Order</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal-backdrop fade show"></div>
+}
+
+@code {
+    private IEnumerable<ProductionOrderDto>? orders;
+    private IEnumerable<ProductDto>? products;
+    private bool showForm = false;
+    private OrderFormModel formModel = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadOrders();
+        products = await ProductService.GetAllProductsAsync();
+    }
+
+    private async Task LoadOrders()
+    {
+        orders = await OrderService.GetAllOrdersAsync();
+    }
+
+    private void ShowCreateForm()
+    {
+        formModel = new OrderFormModel();
+        showForm = true;
+    }
+
+    private void HideForm()
+    {
+        showForm = false;
+    }
+
+    private async Task SaveOrder()
+    {
+        if (formModel.ProductId > 0)
+        {
+            var createDto = new CreateProductionOrderDto
+            {
+                ProductId = formModel.ProductId,
+                Quantity = formModel.Quantity,
+                Notes = formModel.Notes
+            };
+            await OrderService.CreateOrderAsync(createDto);
+            HideForm();
+            await LoadOrders();
+        }
+    }
+
+    private async Task StartOrder(int orderId)
+    {
+        await OrderService.StartOrderAsync(orderId);
+        await LoadOrders();
+    }
+
+    private async Task CompleteOrder(int orderId)
+    {
+        await OrderService.CompleteOrderAsync(orderId);
+        await LoadOrders();
+    }
+
+    private async Task CancelOrder(int orderId)
+    {
+        await OrderService.CancelOrderAsync(orderId);
+        await LoadOrders();
+    }
+
+    private class OrderFormModel
+    {
+        public int ProductId { get; set; }
+        public int Quantity { get; set; } = 1;
+        public string Notes { get; set; } = string.Empty;
+    }
+}

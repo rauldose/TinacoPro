@@ -1,0 +1,115 @@
+@page "/"
+@using TinacoPro.Application.Services
+@inject DashboardService DashboardService
+
+<PageTitle>Dashboard - TinacoPro</PageTitle>
+
+<h1 class="mb-4">Dashboard</h1>
+
+@if (dashboard == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <div class="row g-3 mb-4">
+        <div class="col-md-3">
+            <div class="card text-white bg-primary">
+                <div class="card-body">
+                    <h5 class="card-title">Products</h5>
+                    <h2>@dashboard.ActiveProducts / @dashboard.TotalProducts</h2>
+                    <p class="card-text">Active Products</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card text-white bg-warning">
+                <div class="card-body">
+                    <h5 class="card-title">Raw Materials</h5>
+                    <h2>@dashboard.LowStockMaterials</h2>
+                    <p class="card-text">Low Stock Items</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card text-white bg-info">
+                <div class="card-body">
+                    <h5 class="card-title">Production Orders</h5>
+                    <h2>@dashboard.InProgressOrders</h2>
+                    <p class="card-text">In Progress</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card text-white bg-success">
+                <div class="card-body">
+                    <h5 class="card-title">Completed Today</h5>
+                    <h2>@dashboard.CompletedOrdersToday</h2>
+                    <p class="card-text">Orders</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-3">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Production Overview</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-2">
+                        <strong>Pending Orders:</strong> @dashboard.PendingOrders
+                    </div>
+                    <div class="mb-2">
+                        <strong>In Progress:</strong> @dashboard.InProgressOrders
+                    </div>
+                    <div class="mb-2">
+                        <strong>Completed This Week:</strong> @dashboard.CompletedOrdersThisWeek
+                    </div>
+                    <div class="mb-2">
+                        <strong>Completed This Month:</strong> @dashboard.CompletedOrdersThisMonth
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Inventory Status</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-2">
+                        <strong>Total Raw Materials:</strong> @dashboard.TotalRawMaterials
+                    </div>
+                    <div class="mb-2">
+                        <strong>Low Stock Items:</strong> 
+                        <span class="@(dashboard.LowStockMaterials > 0 ? "text-danger" : "text-success")">
+                            @dashboard.LowStockMaterials
+                        </span>
+                    </div>
+                    @if (dashboard.LowStockMaterials > 0)
+                    {
+                        <div class="alert alert-warning mt-2">
+                            <i class="bi bi-exclamation-triangle"></i> Some materials are running low. Please check raw materials inventory.
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private TinacoPro.Application.DTOs.DashboardDto? dashboard;
+
+    protected override async Task OnInitializedAsync()
+    {
+        dashboard = await DashboardService.GetDashboardDataAsync();
+    }
+}
+

@@ -1,0 +1,182 @@
+@page "/reports"
+@using TinacoPro.Application.Services
+@using TinacoPro.Application.DTOs
+@inject ProductionOrderService OrderService
+@inject RawMaterialService MaterialService
+@inject ProductService ProductService
+
+<PageTitle>Reports - TinacoPro</PageTitle>
+
+<h1 class="mb-4">Reports</h1>
+
+@if (isLoading)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Production Summary</h5>
+                </div>
+                <div class="card-body">
+                    @if (orders != null)
+                    {
+                        var today = DateTime.UtcNow.Date;
+                        var weekStart = today.AddDays(-(int)today.DayOfWeek);
+                        var monthStart = new DateTime(today.Year, today.Month, 1);
+                        
+                        var todayOrders = orders.Where(o => o.Status == "Completed" && o.CompletedDate?.Date == today).ToList();
+                        var weekOrders = orders.Where(o => o.Status == "Completed" && o.CompletedDate >= weekStart).ToList();
+                        var monthOrders = orders.Where(o => o.Status == "Completed" && o.CompletedDate >= monthStart).ToList();
+                        
+                        <div class="row">
+                            <div class="col-md-4">
+                                <h6>Today</h6>
+                                <p class="mb-1">Orders Completed: @todayOrders.Count</p>
+                                <p>Total Units: @todayOrders.Sum(o => o.Quantity)</p>
+                            </div>
+                            <div class="col-md-4">
+                                <h6>This Week</h6>
+                                <p class="mb-1">Orders Completed: @weekOrders.Count</p>
+                                <p>Total Units: @weekOrders.Sum(o => o.Quantity)</p>
+                            </div>
+                            <div class="col-md-4">
+                                <h6>This Month</h6>
+                                <p class="mb-1">Orders Completed: @monthOrders.Count</p>
+                                <p>Total Units: @monthOrders.Sum(o => o.Quantity)</p>
+                            </div>
+                        </div>
+                        
+                        @if (monthOrders.Any())
+                        {
+                            <h6 class="mt-3">Production by Product (This Month)</h6>
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Product</th>
+                                        <th>Orders</th>
+                                        <th>Units Produced</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var group in monthOrders.GroupBy(o => o.ProductName))
+                                    {
+                                        <tr>
+                                            <td>@group.Key</td>
+                                            <td>@group.Count()</td>
+                                            <td>@group.Sum(o => o.Quantity)</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        }
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Inventory Status</h5>
+                </div>
+                <div class="card-body">
+                    @if (materials != null)
+                    {
+                        var lowStockItems = materials.Where(m => m.IsLowStock).ToList();
+                        
+                        @if (lowStockItems.Any())
+                        {
+                            <div class="alert alert-warning">
+                                <strong>Low Stock Alert!</strong> @lowStockItems.Count materials are running low.
+                            </div>
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Material</th>
+                                        <th>Current</th>
+                                        <th>Minimum</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var material in lowStockItems)
+                                    {
+                                        <tr>
+                                            <td>@material.Name</td>
+                                            <td>@material.CurrentStock @material.Unit</td>
+                                            <td>@material.MinimumStock @material.Unit</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        }
+                        else
+                        {
+                            <div class="alert alert-success">
+                                All materials are adequately stocked.
+                            </div>
+                        }
+                    }
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Product Catalog Summary</h5>
+                </div>
+                <div class="card-body">
+                    @if (products != null)
+                    {
+                        <p><strong>Total Products:</strong> @products.Count()</p>
+                        <p><strong>Active Products:</strong> @products.Count(p => p.IsActive)</p>
+                        <p><strong>Inactive Products:</strong> @products.Count(p => !p.IsActive)</p>
+                        
+                        @if (products.Any())
+                        {
+                            <h6 class="mt-3">Products by Size</h6>
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Size</th>
+                                        <th>Count</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var group in products.GroupBy(p => p.Size))
+                                    {
+                                        <tr>
+                                            <td>@group.Key</td>
+                                            <td>@group.Count()</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        }
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private IEnumerable<ProductionOrderDto>? orders;
+    private IEnumerable<RawMaterialDto>? materials;
+    private IEnumerable<ProductDto>? products;
+    private bool isLoading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        orders = await OrderService.GetAllOrdersAsync();
+        materials = await MaterialService.GetAllMaterialsAsync();
+        products = await ProductService.GetAllProductsAsync();
+        isLoading = false;
+    }
+}

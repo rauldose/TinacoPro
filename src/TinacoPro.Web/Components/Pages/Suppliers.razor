@@ -1,0 +1,183 @@
+@page "/suppliers"
+@rendermode InteractiveServer
+@using TinacoPro.Application.Services
+@using TinacoPro.Application.DTOs
+@inject SupplierService SupplierService
+
+<PageTitle>Suppliers - TinacoPro</PageTitle>
+
+<h1 class="mb-4">Suppliers</h1>
+
+<div class="mb-3">
+    <button class="btn btn-primary" @onclick="ShowCreateForm">
+        <i class="bi bi-plus-circle"></i> New Supplier
+    </button>
+</div>
+
+@if (suppliers == null)
+{
+    <p><em>Loading...</em></p>
+}
+else if (suppliers.Any())
+{
+    <div class="row">
+        @foreach (var supplier in suppliers)
+        {
+            <div class="col-md-4 mb-3">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">@supplier.Name</h5>
+                        <span class="badge @(supplier.IsActive ? "bg-success" : "bg-secondary")">
+                            @(supplier.IsActive ? "Active" : "Inactive")
+                        </span>
+                    </div>
+                    <div class="card-body">
+                        <p class="mb-2"><strong>Contact:</strong> @supplier.ContactName</p>
+                        <p class="mb-2"><strong>Phone:</strong> @supplier.Phone</p>
+                        <p class="mb-2"><strong>Email:</strong> @supplier.Email</p>
+                        <p class="mb-2"><strong>Address:</strong> @supplier.Address</p>
+                        <button class="btn btn-sm btn-info" @onclick="() => ShowEditForm(supplier)">
+                            <i class="bi bi-pencil"></i> Edit
+                        </button>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+else
+{
+    <div class="alert alert-info">No suppliers found. Create your first supplier!</div>
+}
+
+@if (showForm)
+{
+    <div class="modal fade show d-block" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">@(editingSupplier == null ? "New Supplier" : "Edit Supplier")</h5>
+                    <button type="button" class="btn-close" @onclick="HideForm"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Name</label>
+                        <input type="text" class="form-control" @bind="formModel.Name" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Contact Name</label>
+                        <input type="text" class="form-control" @bind="formModel.ContactName" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Phone</label>
+                        <input type="text" class="form-control" @bind="formModel.Phone" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Email</label>
+                        <input type="email" class="form-control" @bind="formModel.Email" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Address</label>
+                        <textarea class="form-control" @bind="formModel.Address" rows="3"></textarea>
+                    </div>
+                    @if (editingSupplier != null)
+                    {
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" @bind="formModel.IsActive" id="isActive" />
+                            <label class="form-check-label" for="isActive">Active</label>
+                        </div>
+                    }
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="HideForm">Cancel</button>
+                    <button type="button" class="btn btn-primary" @onclick="SaveSupplier">Save</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal-backdrop fade show"></div>
+}
+
+@code {
+    private IEnumerable<SupplierDto>? suppliers;
+    private bool showForm = false;
+    private SupplierDto? editingSupplier;
+    private SupplierFormModel formModel = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadSuppliers();
+    }
+
+    private async Task LoadSuppliers()
+    {
+        suppliers = await SupplierService.GetAllSuppliersAsync();
+    }
+
+    private void ShowCreateForm()
+    {
+        editingSupplier = null;
+        formModel = new SupplierFormModel();
+        showForm = true;
+    }
+
+    private void ShowEditForm(SupplierDto supplier)
+    {
+        editingSupplier = supplier;
+        formModel = new SupplierFormModel
+        {
+            Name = supplier.Name,
+            ContactName = supplier.ContactName,
+            Phone = supplier.Phone,
+            Email = supplier.Email,
+            Address = supplier.Address,
+            IsActive = supplier.IsActive
+        };
+        showForm = true;
+    }
+
+    private void HideForm()
+    {
+        showForm = false;
+        editingSupplier = null;
+    }
+
+    private async Task SaveSupplier()
+    {
+        if (editingSupplier == null)
+        {
+            var createDto = new CreateSupplierDto
+            {
+                Name = formModel.Name,
+                ContactName = formModel.ContactName,
+                Phone = formModel.Phone,
+                Email = formModel.Email,
+                Address = formModel.Address
+            };
+            await SupplierService.CreateSupplierAsync(createDto);
+        }
+        else
+        {
+            editingSupplier.Name = formModel.Name;
+            editingSupplier.ContactName = formModel.ContactName;
+            editingSupplier.Phone = formModel.Phone;
+            editingSupplier.Email = formModel.Email;
+            editingSupplier.Address = formModel.Address;
+            editingSupplier.IsActive = formModel.IsActive;
+            await SupplierService.UpdateSupplierAsync(editingSupplier);
+        }
+        
+        HideForm();
+        await LoadSuppliers();
+    }
+
+    private class SupplierFormModel
+    {
+        public string Name { get; set; } = string.Empty;
+        public string ContactName { get; set; } = string.Empty;
+        public string Phone { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
+        public string Address { get; set; } = string.Empty;
+        public bool IsActive { get; set; } = true;
+    }
+}
