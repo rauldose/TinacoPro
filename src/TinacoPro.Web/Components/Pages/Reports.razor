@@ -4,6 +4,7 @@
 @inject ProductionOrderService OrderService
 @inject RawMaterialService MaterialService
 @inject ProductService ProductService
+@inject ExcelExportService ExcelService
 @inject IJSRuntime JS
 
 <PageTitle>Reports - TinacoPro</PageTitle>
@@ -70,7 +71,11 @@
             <MudButton Variant="Variant.Text" Color="Color.Secondary" StartIcon="@Icons.Material.Filled.Download">
                 Export PDF
             </MudButton>
-            <MudButton Variant="Variant.Text" Color="Color.Success" StartIcon="@Icons.Material.Filled.TableChart">
+            <MudButton Variant="Variant.Text" 
+                       Color="Color.Success" 
+                       StartIcon="@Icons.Material.Filled.TableChart"
+                       OnClick="ExportToExcel"
+                       Disabled="@(!reportGenerated)">
                 Export Excel
             </MudButton>
             <MudButton Variant="Variant.Text" Color="Color.Info" StartIcon="@Icons.Material.Filled.Save">
@@ -269,5 +274,34 @@
         await Task.Delay(500); // Simulate report generation
         reportGenerated = true;
         isLoading = false;
+    }
+
+    private async Task ExportToExcel()
+    {
+        if (!reportGenerated) return;
+
+        byte[] fileBytes;
+        string fileName;
+
+        if (selectedReportType == "production")
+        {
+            fileBytes = ExcelService.ExportProductionReport(orders!, startDate, endDate);
+            fileName = $"Production_Report_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx";
+        }
+        else if (selectedReportType == "inventory")
+        {
+            fileBytes = ExcelService.ExportInventoryReport(materials!);
+            fileName = $"Inventory_Report_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx";
+        }
+        else
+        {
+            // For other report types, use a generic filename
+            fileBytes = ExcelService.ExportProductionReport(orders!, startDate, endDate);
+            fileName = $"Report_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx";
+        }
+
+        // Download file using JavaScript interop
+        var base64 = Convert.ToBase64String(fileBytes);
+        await JS.InvokeVoidAsync("downloadFile", fileName, base64);
     }
 }

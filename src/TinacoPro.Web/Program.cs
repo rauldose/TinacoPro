@@ -36,6 +36,7 @@ builder.Services.AddScoped<RawMaterialService>();
 builder.Services.AddScoped<ProductionOrderService>();
 builder.Services.AddScoped<SupplierService>();
 builder.Services.AddScoped<DashboardService>();
+builder.Services.AddScoped<ExcelExportService>();
 
 var app = builder.Build();
 
