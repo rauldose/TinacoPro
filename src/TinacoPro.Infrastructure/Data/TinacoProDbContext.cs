@@ -20,6 +20,8 @@ public class TinacoProDbContext : DbContext
     public DbSet<User> Users => Set<User>();
     public DbSet<Machine> Machines => Set<Machine>();
     public DbSet<AssemblyLog> AssemblyLogs => Set<AssemblyLog>();
+    public DbSet<ProductTemplate> ProductTemplates => Set<ProductTemplate>();
+    public DbSet<TemplatePart> TemplateParts => Set<TemplatePart>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -35,6 +37,11 @@ public class TinacoProDbContext : DbContext
             entity.Property(e => e.Color).HasMaxLength(50);
             entity.Property(e => e.Capacity).HasPrecision(18, 2);
             entity.Property(e => e.Weight).HasPrecision(18, 2);
+            entity.Property(e => e.MaterialCost).HasPrecision(18, 2);
+            entity.Property(e => e.LaborCost).HasPrecision(18, 2);
+            entity.Property(e => e.OverheadCost).HasPrecision(18, 2);
+            entity.Property(e => e.SellingPrice).HasPrecision(18, 2);
+            entity.Property(e => e.ProfitMargin).HasPrecision(18, 2);
         });
 
         // RawMaterial configuration
@@ -184,6 +191,52 @@ public class TinacoProDbContext : DbContext
                 .HasForeignKey(e => e.ProductionOrderId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
+
+        // ProductTemplate configuration
+        modelBuilder.Entity<ProductTemplate>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Name).IsRequired().HasMaxLength(200);
+            entity.Property(e => e.ModelType).HasMaxLength(100);
+            entity.Property(e => e.Description).HasMaxLength(1000);
+            entity.Property(e => e.TotalMaterialCost).HasPrecision(18, 2);
+            entity.Property(e => e.TotalLaborCost).HasPrecision(18, 2);
+        });
+
+        // TemplatePart configuration
+        modelBuilder.Entity<TemplatePart>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Name).IsRequired().HasMaxLength(200);
+            entity.Property(e => e.PartType).HasMaxLength(50);
+            entity.Property(e => e.Unit).HasMaxLength(50);
+            entity.Property(e => e.Quantity).HasPrecision(18, 2);
+            entity.Property(e => e.UnitCost).HasPrecision(18, 2);
+            entity.Property(e => e.LaborCost).HasPrecision(18, 2);
+            entity.Property(e => e.Notes).HasMaxLength(1000);
+            
+            entity.HasOne(e => e.Template)
+                .WithMany(t => t.Parts)
+                .HasForeignKey(e => e.TemplateId)
+                .OnDelete(DeleteBehavior.Cascade);
+            
+            entity.HasOne(e => e.ParentPart)
+                .WithMany(p => p.Children)
+                .HasForeignKey(e => e.ParentPartId)
+                .OnDelete(DeleteBehavior.Restrict);
+            
+            entity.HasOne(e => e.RawMaterial)
+                .WithMany()
+                .HasForeignKey(e => e.RawMaterialId)
+                .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        // Product-Template relationship
+        modelBuilder.Entity<Product>()
+            .HasOne(p => p.Template)
+            .WithMany(t => t.Products)
+            .HasForeignKey(p => p.TemplateId)
+            .OnDelete(DeleteBehavior.SetNull);
 
         // Seed initial data
         SeedData(modelBuilder);
