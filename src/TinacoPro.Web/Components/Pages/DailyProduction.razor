@@ -133,7 +133,7 @@ else
         {
             foreach (var product in products)
             {
-                var capacity = product.Capacity.ToString("0");
+                var capacity = ((int)product.Capacity).ToString();
                 if (!productCapacityToId.ContainsKey(capacity))
                 {
                     productCapacityToId[capacity] = product.Id;

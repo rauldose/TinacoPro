@@ -231,9 +231,17 @@ else
     {
         if (selectedMaterial != null && stockQuantity > 0)
         {
-            await MaterialService.AdjustStockAsync(selectedMaterial.Id, stockQuantity, isStockIn);
-            HideStockForm();
-            await LoadMaterials();
+            try
+            {
+                await MaterialService.AdjustStockAsync(selectedMaterial.Id, stockQuantity, isStockIn);
+                HideStockForm();
+                await LoadMaterials();
+            }
+            catch (InvalidOperationException)
+            {
+                // Keep dialog open and show error - stock quantity exceeds available stock
+                stockQuantity = selectedMaterial.CurrentStock;
+            }
         }
     }
 
