@@ -29,6 +29,7 @@ builder.Services.AddScoped<IRawMaterialRepository, RawMaterialRepository>();
 builder.Services.AddScoped<IProductionOrderRepository, ProductionOrderRepository>();
 builder.Services.AddScoped<ISupplierRepository, SupplierRepository>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<IProductTemplateRepository, ProductTemplateRepository>();
 
 // Register application services
 builder.Services.AddScoped<ProductService>();
@@ -37,6 +38,7 @@ builder.Services.AddScoped<ProductionOrderService>();
 builder.Services.AddScoped<SupplierService>();
 builder.Services.AddScoped<DashboardService>();
 builder.Services.AddScoped<ExcelExportService>();
+builder.Services.AddScoped<ProductTemplateService>();
 
 var app = builder.Build();
 
