@@ -46,6 +46,10 @@ builder.Services.AddScoped<DashboardService>();
 builder.Services.AddScoped<ExcelExportService>();
 builder.Services.AddScoped<ProductTemplateService>();
 builder.Services.AddScoped<FinishedGoodsService>();
+builder.Services.AddScoped<ShipmentService>();
+
+// Register repositories
+builder.Services.AddScoped<IShipmentRepository, ShipmentRepository>();
 
 var app = builder.Build();
 
