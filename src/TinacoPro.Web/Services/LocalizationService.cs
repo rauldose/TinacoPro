@@ -456,7 +456,7 @@ public class LocalizationService
                 ["NewMaterial"] = "Nueva Materia Prima",
                 ["EditMaterial"] = "Editar Material",
                 ["UnitFormat"] = "Unidad (kg, L, pzs)",
-                ["LowStockAlertCount"] = "material(es) tienen stock bajo!",
+                ["LowStockAlertCount"] = "¡material(es) tienen stock bajo!",
                 ["NoMaterialsFound"] = "No se encontraron materiales. ¡Cree su primer material!",
                 ["Reason"] = "Razón",
                 ["AddStock"] = "Agregar Stock",

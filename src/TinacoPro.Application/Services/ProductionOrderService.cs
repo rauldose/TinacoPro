@@ -116,7 +116,7 @@ public class ProductionOrderService
     /// <summary>
     /// Creates a production order from daily production entry with automation:
     /// - Automatically sets the order to InProgress
-    /// - Checks existing InProgress orders for the same product to auto-complete if target is met
+    /// - Checks existing InProgress orders for the same product to auto-complete if daily production meets target
     /// </summary>
     public async Task<(ProductionOrderDto Order, bool AutoCompleted)> CreateDailyProductionOrderAsync(CreateProductionOrderDto dto)
     {
@@ -128,6 +128,8 @@ public class ProductionOrderService
         orderDto.Status = "InProgress";
 
         // Check existing InProgress orders for this product to see if any should be auto-completed
+        // An existing order is auto-completed when the daily production quantity (dto.Quantity) meets
+        // or exceeds that order's target quantity
         bool autoCompleted = false;
         var allOrders = await _orderRepository.GetAllAsync();
         var inProgressOrders = allOrders
@@ -137,15 +139,8 @@ public class ProductionOrderService
 
         foreach (var existingOrder in inProgressOrders)
         {
-            // Calculate total production for this product from all completed and current orders
-            var completedOrders = allOrders
-                .Where(o => o.ProductId == dto.ProductId && o.Status == OrderStatus.Completed)
-                .ToList();
-            
-            var totalProduced = completedOrders.Sum(o => o.Quantity) + dto.Quantity;
-            
-            // If total produced meets or exceeds the existing order's target, auto-complete it
-            if (totalProduced >= existingOrder.Quantity)
+            // If the daily production quantity meets or exceeds this order's target, auto-complete it
+            if (dto.Quantity >= existingOrder.Quantity)
             {
                 try
                 {
