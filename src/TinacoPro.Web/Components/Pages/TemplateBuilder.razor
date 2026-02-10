@@ -187,12 +187,45 @@
 
         @if (editingPart.PartType == "Material")
         {
-            <MudSelect @bind-Value="editingPart.RawMaterialId" Label="Material" T="int?" Clearable="true" Class="mt-3">
-                @foreach (var material in materials)
-                {
-                    <MudSelectItem T="int?" Value="@material.Id">@material.Name (@material.Code)</MudSelectItem>
-                }
-            </MudSelect>
+            <MudAutocomplete T="RawMaterialDto" 
+                             @bind-Value="selectedMaterial"
+                             Label="Material" 
+                             SearchFunc="@SearchMaterials"
+                             ToStringFunc="@(m => m == null ? "" : $"{m.Name} ({m.Code})")"
+                             Class="mt-3"
+                             Clearable="true"
+                             Dense="true"
+                             ResetValueOnEmptyText="true"
+                             CoerceText="true"
+                             CoerceValue="true">
+                <ItemTemplate Context="material">
+                    <div class="d-flex justify-space-between align-center" style="width: 100%;">
+                        <div>
+                            <MudText Typo="Typo.body2">@material.Name (@material.Code)</MudText>
+                            <MudText Typo="Typo.caption" Color="@(material.IsLowStock ? Color.Warning : Color.Secondary)">
+                                Stock: @material.CurrentStock.ToString("F2") @material.Unit | Cost: $@material.UnitCost.ToString("F2")/@material.Unit
+                            </MudText>
+                        </div>
+                        @if (material.IsLowStock)
+                        {
+                            <MudChip T="string" Size="Size.Small" Color="Color.Warning">Low Stock</MudChip>
+                        }
+                    </div>
+                </ItemTemplate>
+            </MudAutocomplete>
+
+            <div class="d-flex justify-space-between align-center mt-2">
+                <MudText Typo="Typo.caption" Color="Color.Secondary">
+                    @if (selectedMaterial != null)
+                    {
+                        <text>Available: @selectedMaterial.CurrentStock.ToString("F2") @selectedMaterial.Unit</text>
+                    }
+                </MudText>
+                <MudButton Variant="Variant.Text" Size="Size.Small" StartIcon="@Icons.Material.Filled.Add" 
+                           OnClick="OpenQuickAddMaterialDialog" Color="Color.Primary">
+                    Quick Add Material
+                </MudButton>
+            </div>
         }
 
         <MudNumericField @bind-Value="editingPart.Quantity" Label="Quantity" T="decimal" Min="0" Class="mt-3" />
@@ -204,6 +237,24 @@
     <DialogActions>
         <MudButton OnClick="@(() => showPartDialog = false)">Cancel</MudButton>
         <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SavePart">Save</MudButton>
+    </DialogActions>
+</MudDialog>
+
+<!-- Quick Add Material Dialog -->
+<MudDialog @bind-Visible="showQuickAddMaterialDialog">
+    <TitleContent>
+        <MudText Typo="Typo.h6">Quick Add Material</MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudTextField @bind-Value="quickAddMaterial.Name" Label="Material Name" Required="true" />
+        <MudTextField @bind-Value="quickAddMaterial.Code" Label="Material Code" Required="true" Class="mt-3" />
+        <MudTextField @bind-Value="quickAddMaterial.Unit" Label="Unit" Placeholder="kg, pcs, liters" Class="mt-3" />
+        <MudNumericField @bind-Value="quickAddMaterial.UnitCost" Label="Unit Cost ($)" T="decimal" Min="0" Format="F2" Class="mt-3" />
+        <MudNumericField @bind-Value="quickAddMaterial.MinimumStock" Label="Minimum Stock" T="decimal" Min="0" Class="mt-3" />
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="@(() => showQuickAddMaterialDialog = false)">Cancel</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SaveQuickAddMaterial">Add Material</MudButton>
     </DialogActions>
 </MudDialog>
 
@@ -257,6 +308,8 @@
     private TemplatePartDto editingPart = new();
     private bool showTemplateDialog;
     private bool showPartDialog;
+    private bool showQuickAddMaterialDialog;
+    private CreateRawMaterialDto quickAddMaterial = new();
     private TreeItemData? selectedTreeItem;
     private TemplatePartDto? contextMenuPart;
     private bool showContextMenu;
@@ -433,6 +486,72 @@
             {
                 selectedTemplate = await TemplateService.GetTemplateByIdAsync(selectedTemplate.Id);
             }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error: {ex.Message}", Severity.Error);
+        }
+    }
+
+    // Material selection enhancement methods
+    private Task<IEnumerable<RawMaterialDto>> SearchMaterials(string value, CancellationToken token)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return Task.FromResult(materials.AsEnumerable());
+
+        var filtered = materials.Where(m => 
+            m.Name.Contains(value, StringComparison.OrdinalIgnoreCase) ||
+            m.Code.Contains(value, StringComparison.OrdinalIgnoreCase))
+            .OrderByDescending(m => m.IsLowStock) // Show low stock items first
+            .ThenBy(m => m.Name);
+
+        return Task.FromResult(filtered.AsEnumerable());
+    }
+
+    private RawMaterialDto? selectedMaterial
+    {
+        get => materials.FirstOrDefault(m => m.Id == editingPart.RawMaterialId);
+        set
+        {
+            if (value != null)
+            {
+                editingPart.RawMaterialId = value.Id;
+                // Auto-populate unit cost from selected material
+                editingPart.UnitCost = value.UnitCost;
+                // Auto-populate unit from material
+                if (string.IsNullOrWhiteSpace(editingPart.Unit))
+                {
+                    editingPart.Unit = value.Unit;
+                }
+            }
+            else
+            {
+                editingPart.RawMaterialId = null;
+            }
+            StateHasChanged();
+        }
+    }
+
+    private void OpenQuickAddMaterialDialog()
+    {
+        quickAddMaterial = new CreateRawMaterialDto();
+        showQuickAddMaterialDialog = true;
+    }
+
+    private async Task SaveQuickAddMaterial()
+    {
+        try
+        {
+            var newMaterial = await MaterialService.CreateMaterialAsync(quickAddMaterial);
+            Snackbar.Add("Material added successfully", Severity.Success);
+            
+            // Reload materials list
+            materials = (await MaterialService.GetAllMaterialsAsync()).ToList();
+            
+            // Auto-select the new material
+            selectedMaterial = materials.FirstOrDefault(m => m.Id == newMaterial.Id);
+            
+            showQuickAddMaterialDialog = false;
         }
         catch (Exception ex)
         {
