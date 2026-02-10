@@ -3,10 +3,12 @@
 @using TinacoPro.Application.Services
 @using TinacoPro.Application.DTOs
 @using TinacoPro.Domain.Entities
+@using TinacoPro.Web.Services
 @inject ShipmentService ShipmentService
 @inject ProductService ProductService
 @inject FinishedGoodsService FinishedGoodsService
 @inject ISnackbar Snackbar
+@inject LocalizationService Localization
 
 <PageTitle>Shipments - TinacoPro</PageTitle>
 
@@ -89,12 +91,12 @@ else
 <!-- New/Edit Shipment Dialog -->
 <MudDialog @bind-Visible="showShipmentDialog">
     <TitleContent>
-        <MudText Typo="Typo.h6">@(editingShipmentId > 0 ? "Edit Shipment" : "New Shipment")</MudText>
+        <MudText Typo="Typo.h6">@(editingShipmentId > 0 ? Localization.Translate("EditShipment") : Localization.Translate("NewShipment"))</MudText>
     </TitleContent>
     <DialogContent>
         <MudGrid>
             <MudItem xs="12" md="6">
-                <MudSelect @bind-Value="editingShipment.ProductId" Label="Product" Required="true">
+                <MudSelect @bind-Value="editingShipment.ProductId" Label="@Localization.Translate("Product")" Required="true">
                     @foreach (var product in products ?? Enumerable.Empty<ProductDto>())
                     {
                         <MudSelectItem Value="@product.Id">@product.Name</MudSelectItem>
@@ -102,7 +104,7 @@ else
                 </MudSelect>
             </MudItem>
             <MudItem xs="12" md="6">
-                <MudSelect @bind-Value="editingShipment.FinishedGoodId" Label="Finished Good (Optional)" T="int?" Clearable="true">
+                <MudSelect @bind-Value="editingShipment.FinishedGoodId" Label="@Localization.Translate("FinishedGoodOptional")" T="int?" Clearable="true">
                     @foreach (var fg in finishedGoods ?? Enumerable.Empty<FinishedGoodsDto>())
                     {
                         <MudSelectItem T="int?" Value="@fg.Id">@fg.ProductName - Batch: @fg.BatchNumber (Qty: @fg.Quantity)</MudSelectItem>
@@ -110,37 +112,37 @@ else
                 </MudSelect>
             </MudItem>
             <MudItem xs="12" md="6">
-                <MudNumericField @bind-Value="editingShipment.Quantity" Label="Quantity" T="decimal" Min="0" Required="true" />
+                <MudNumericField @bind-Value="editingShipment.Quantity" Label="@Localization.Translate("Quantity")" T="decimal" Min="0" Required="true" />
             </MudItem>
             <MudItem xs="12" md="6">
-                <MudDatePicker @bind-Date="shipmentDate" Label="Shipment Date" Required="true" />
+                <MudDatePicker @bind-Date="shipmentDate" Label="@Localization.Translate("ShipmentDate")" Required="true" />
             </MudItem>
             <MudItem xs="12" md="6">
-                <MudDatePicker @bind-Date="expectedDeliveryDate" Label="Expected Delivery Date" />
+                <MudDatePicker @bind-Date="expectedDeliveryDate" Label="@Localization.Translate("ExpectedDeliveryDate")" />
             </MudItem>
             <MudItem xs="12">
-                <MudTextField @bind-Value="editingShipment.CustomerName" Label="Customer Name" Required="true" />
+                <MudTextField @bind-Value="editingShipment.CustomerName" Label="@Localization.Translate("CustomerName")" Required="true" />
             </MudItem>
             <MudItem xs="12" md="6">
-                <MudTextField @bind-Value="editingShipment.CustomerContact" Label="Customer Contact" />
+                <MudTextField @bind-Value="editingShipment.CustomerContact" Label="@Localization.Translate("CustomerContact")" />
             </MudItem>
             <MudItem xs="12">
-                <MudTextField @bind-Value="editingShipment.DestinationAddress" Label="Destination Address" Lines="2" />
+                <MudTextField @bind-Value="editingShipment.DestinationAddress" Label="@Localization.Translate("DestinationAddress")" Lines="2" />
             </MudItem>
             <MudItem xs="12" md="6">
-                <MudTextField @bind-Value="editingShipment.DestinationCity" Label="City" />
+                <MudTextField @bind-Value="editingShipment.DestinationCity" Label="@Localization.Translate("City")" />
             </MudItem>
             <MudItem xs="12" md="6">
-                <MudTextField @bind-Value="editingShipment.DestinationZone" Label="Zone/State" />
+                <MudTextField @bind-Value="editingShipment.DestinationZone" Label="@Localization.Translate("ZoneState")" />
             </MudItem>
             <MudItem xs="12">
-                <MudTextField @bind-Value="editingShipment.Notes" Label="Notes" Lines="3" />
+                <MudTextField @bind-Value="editingShipment.Notes" Label="@Localization.Translate("Notes")" Lines="3" />
             </MudItem>
         </MudGrid>
     </DialogContent>
     <DialogActions>
-        <MudButton OnClick="@(() => showShipmentDialog = false)">Cancel</MudButton>
-        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SaveShipment">Save</MudButton>
+        <MudButton OnClick="@(() => showShipmentDialog = false)">@Localization.Translate("Cancel")</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SaveShipment">@Localization.Translate("Save")</MudButton>
     </DialogActions>
 </MudDialog>
 

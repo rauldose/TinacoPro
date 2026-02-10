@@ -2,9 +2,11 @@
 @rendermode InteractiveServer
 @using TinacoPro.Application.Services
 @using TinacoPro.Application.DTOs
+@using TinacoPro.Web.Services
 @inject ProductTemplateService TemplateService
 @inject RawMaterialService MaterialService
 @inject ISnackbar Snackbar
+@inject LocalizationService Localization
 
 <MudContainer MaxWidth="MaxWidth.False" Class="pa-4">
     <MudText Typo="Typo.h4" Class="mb-4">Product Template Builder</MudText>
@@ -148,48 +150,48 @@
 <!-- Template Dialog -->
 <MudDialog @bind-Visible="showTemplateDialog">
     <TitleContent>
-        <MudText Typo="Typo.h6">@(editingTemplate?.Id > 0 ? "Edit Template" : "New Template")</MudText>
+        <MudText Typo="Typo.h6">@(editingTemplate?.Id > 0 ? Localization.Translate("EditTemplate") : Localization.Translate("NewTemplate"))</MudText>
     </TitleContent>
     <DialogContent>
-        <MudTextField @bind-Value="editingTemplate.Name" Label="Template Name" Required="true" />
-        <MudTextField @bind-Value="editingTemplate.ModelType" Label="Model Type" Required="true" Class="mt-3" />
-        <MudTextField @bind-Value="editingTemplate.Description" Label="Description" Lines="3" Class="mt-3" />
-        <MudSwitch @bind-Value="editingTemplate.IsActive" Label="Active" Color="Color.Success" Class="mt-3" />
+        <MudTextField @bind-Value="editingTemplate.Name" Label="@Localization.Translate("TemplateName")" Required="true" />
+        <MudTextField @bind-Value="editingTemplate.ModelType" Label="@Localization.Translate("ModelType")" Required="true" Class="mt-3" />
+        <MudTextField @bind-Value="editingTemplate.Description" Label="@Localization.Translate("Description")" Lines="3" Class="mt-3" />
+        <MudSwitch @bind-Value="editingTemplate.IsActive" Label="@Localization.Translate("Active")" Color="Color.Success" Class="mt-3" />
     </DialogContent>
     <DialogActions>
-        <MudButton OnClick="@(() => showTemplateDialog = false)">Cancel</MudButton>
-        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SaveTemplate">Save</MudButton>
+        <MudButton OnClick="@(() => showTemplateDialog = false)">@Localization.Translate("Cancel")</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SaveTemplate">@Localization.Translate("Save")</MudButton>
     </DialogActions>
 </MudDialog>
 
 <!-- Part Dialog -->
 <MudDialog @bind-Visible="showPartDialog">
     <TitleContent>
-        <MudText Typo="Typo.h6">@(editingPart?.Id > 0 ? "Edit Part" : "Add Part")</MudText>
+        <MudText Typo="Typo.h6">@(editingPart?.Id > 0 ? Localization.Translate("EditPart") : Localization.Translate("AddPart"))</MudText>
     </TitleContent>
     <DialogContent>
-        <MudSelect @bind-Value="editingPart.ParentPartId" Label="Parent Part" T="int?" Clearable="true">
-            <MudSelectItem T="int?" Value="null">None (Root Level)</MudSelectItem>
+        <MudSelect @bind-Value="editingPart.ParentPartId" Label="@Localization.Translate("ParentPart")" T="int?" Clearable="true">
+            <MudSelectItem T="int?" Value="null">@Localization.Translate("None") (@Localization.Translate("RootLevel"))</MudSelectItem>
             @foreach (var part in GetAvailableParentParts())
             {
                 <MudSelectItem T="int?" Value="@part.Id">@part.Name</MudSelectItem>
             }
         </MudSelect>
 
-        <MudSelect @bind-Value="editingPart.PartType" Label="Part Type" Required="true" Class="mt-3">
+        <MudSelect @bind-Value="editingPart.PartType" Label="@Localization.Translate("PartType")" Required="true" Class="mt-3">
             <MudSelectItem Value="@("Assembly")">Assembly</MudSelectItem>
             <MudSelectItem Value="@("Material")">Material</MudSelectItem>
             <MudSelectItem Value="@("Component")">Component</MudSelectItem>
             <MudSelectItem Value="@("Process")">Process</MudSelectItem>
         </MudSelect>
 
-        <MudTextField @bind-Value="editingPart.Name" Label="Part Name" Required="true" Class="mt-3" />
+        <MudTextField @bind-Value="editingPart.Name" Label="@Localization.Translate("PartName")" Required="true" Class="mt-3" />
 
         @if (editingPart.PartType == "Material")
         {
             <MudAutocomplete T="RawMaterialDto" 
                              @bind-Value="selectedMaterial"
-                             Label="Material" 
+                             Label="@Localization.Translate("RawMaterial")" 
                              SearchFunc="@SearchMaterials"
                              ToStringFunc="@(m => m == null ? "" : $"{m.Name} ({m.Code})")"
                              Class="mt-3"
@@ -228,33 +230,33 @@
             </div>
         }
 
-        <MudNumericField @bind-Value="editingPart.Quantity" Label="Quantity" T="decimal" Min="0" Class="mt-3" />
-        <MudTextField @bind-Value="editingPart.Unit" Label="Unit" Placeholder="kg, pcs, liters" Class="mt-3" />
-        <MudNumericField @bind-Value="editingPart.UnitCost" Label="Unit Cost ($)" T="decimal" Min="0" Format="F2" Class="mt-3" />
-        <MudNumericField @bind-Value="editingPart.LaborCost" Label="Labor Cost ($)" T="decimal" Min="0" Format="F2" Class="mt-3" />
-        <MudNumericField @bind-Value="editingPart.EstimatedMinutes" Label="Estimated Minutes" T="int" Min="0" Class="mt-3" />
+        <MudNumericField @bind-Value="editingPart.Quantity" Label="@Localization.Translate("Quantity")" T="decimal" Min="0" Class="mt-3" />
+        <MudTextField @bind-Value="editingPart.Unit" Label="@Localization.Translate("Unit")" Placeholder="kg, pcs, liters" Class="mt-3" />
+        <MudNumericField @bind-Value="editingPart.UnitCost" Label="@Localization.Translate("UnitCost")" T="decimal" Min="0" Format="F2" Class="mt-3" />
+        <MudNumericField @bind-Value="editingPart.LaborCost" Label="@Localization.Translate("LaborCost")" T="decimal" Min="0" Format="F2" Class="mt-3" />
+        <MudNumericField @bind-Value="editingPart.EstimatedMinutes" Label="@Localization.Translate("EstimatedMinutes")" T="int" Min="0" Class="mt-3" />
     </DialogContent>
     <DialogActions>
-        <MudButton OnClick="@(() => showPartDialog = false)">Cancel</MudButton>
-        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SavePart">Save</MudButton>
+        <MudButton OnClick="@(() => showPartDialog = false)">@Localization.Translate("Cancel")</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SavePart">@Localization.Translate("Save")</MudButton>
     </DialogActions>
 </MudDialog>
 
 <!-- Quick Add Material Dialog -->
 <MudDialog @bind-Visible="showQuickAddMaterialDialog">
     <TitleContent>
-        <MudText Typo="Typo.h6">Quick Add Material</MudText>
+        <MudText Typo="Typo.h6">@Localization.Translate("NewMaterial")</MudText>
     </TitleContent>
     <DialogContent>
-        <MudTextField @bind-Value="quickAddMaterial.Name" Label="Material Name" Required="true" />
-        <MudTextField @bind-Value="quickAddMaterial.Code" Label="Material Code" Required="true" Class="mt-3" />
-        <MudTextField @bind-Value="quickAddMaterial.Unit" Label="Unit" Placeholder="kg, pcs, liters" Class="mt-3" />
-        <MudNumericField @bind-Value="quickAddMaterial.UnitCost" Label="Unit Cost ($)" T="decimal" Min="0" Format="F2" Class="mt-3" />
-        <MudNumericField @bind-Value="quickAddMaterial.MinimumStock" Label="Minimum Stock" T="decimal" Min="0" Class="mt-3" />
+        <MudTextField @bind-Value="quickAddMaterial.Name" Label="@Localization.Translate("MaterialName")" Required="true" />
+        <MudTextField @bind-Value="quickAddMaterial.Code" Label="@Localization.Translate("MaterialCode")" Required="true" Class="mt-3" />
+        <MudTextField @bind-Value="quickAddMaterial.Unit" Label="@Localization.Translate("Unit")" Placeholder="kg, pcs, liters" Class="mt-3" />
+        <MudNumericField @bind-Value="quickAddMaterial.UnitCost" Label="@Localization.Translate("UnitCost")" T="decimal" Min="0" Format="F2" Class="mt-3" />
+        <MudNumericField @bind-Value="quickAddMaterial.MinimumStock" Label="@Localization.Translate("MinimumStock")" T="decimal" Min="0" Class="mt-3" />
     </DialogContent>
     <DialogActions>
-        <MudButton OnClick="@(() => showQuickAddMaterialDialog = false)">Cancel</MudButton>
-        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SaveQuickAddMaterial">Add Material</MudButton>
+        <MudButton OnClick="@(() => showQuickAddMaterialDialog = false)">@Localization.Translate("Cancel")</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SaveQuickAddMaterial">@Localization.Translate("NewMaterial")</MudButton>
     </DialogActions>
 </MudDialog>
 
