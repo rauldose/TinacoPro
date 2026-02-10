@@ -134,6 +134,12 @@ public class ProductService
             product.MaterialCost = template.TotalMaterialCost;
             product.LaborCost = template.TotalLaborCost;
         }
+        else
+        {
+            // Log warning: template not found but product references it
+            // This indicates a data integrity issue
+            throw new InvalidOperationException($"Template with ID {templateId} not found. Cannot sync costs.");
+        }
     }
 
     /// <summary>
