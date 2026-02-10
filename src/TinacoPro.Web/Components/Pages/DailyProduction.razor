@@ -201,7 +201,7 @@ else
 
             if (ordersCreated > 0)
             {
-                Snackbar.Add($"Production orders created successfully for {ordersCreated} product(s)!", Severity.Success);
+                Snackbar.Add(string.Format(Localization.Translate("ProductionOrdersCreatedSuccess"), ordersCreated), Severity.Success);
                 
                 // Reset form
                 foreach (var key in productQuantities.Keys.ToList())
@@ -217,12 +217,12 @@ else
             }
             else
             {
-                Snackbar.Add("Please enter quantities for at least one product.", Severity.Warning);
+                Snackbar.Add(Localization.Translate("EnterQuantityWarning"), Severity.Warning);
             }
         }
         catch (Exception ex)
         {
-            Snackbar.Add($"Error creating production orders: {ex.Message}", Severity.Error);
+            Snackbar.Add(string.Format(Localization.Translate("ErrorCreatingOrders"), ex.Message), Severity.Error);
         }
     }
 

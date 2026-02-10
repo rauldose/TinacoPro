@@ -2,22 +2,25 @@
 @rendermode InteractiveServer
 @using TinacoPro.Application.Services
 @using TinacoPro.Application.DTOs
+@using TinacoPro.Web.Services
 @inject ProductionOrderService OrderService
 @inject RawMaterialService MaterialService
 @inject ProductService ProductService
 @inject ExcelExportService ExcelService
 @inject IJSRuntime JS
+@inject LocalizationService Localization
+@implements IDisposable
 
-<PageTitle>Reports - TinacoPro</PageTitle>
+<PageTitle>@Localization.Translate("ReportsAnalytics") - TinacoPro</PageTitle>
 
 <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4">
-    <MudText Typo="Typo.h4" Class="mb-4">Reports & Analytics</MudText>
+    <MudText Typo="Typo.h4" Class="mb-4">@Localization.Translate("ReportsAnalytics")</MudText>
 
     <!-- Report Designer Card -->
     <MudCard Class="mb-4">
         <MudCardHeader>
             <CardHeaderContent>
-                <MudText Typo="Typo.h5">Report Designer</MudText>
+                <MudText Typo="Typo.h5">@Localization.Translate("ReportDesigner")</MudText>
             </CardHeaderContent>
             <CardHeaderActions>
                 <MudIconButton Icon="@Icons.Material.Filled.Settings" Color="Color.Default" />
@@ -26,19 +29,19 @@
         <MudCardContent>
             <MudGrid>
                 <MudItem xs="12" md="4">
-                    <MudSelect T="string" Label="Report Type" @bind-Value="selectedReportType" Variant="Variant.Outlined">
-                        <MudSelectItem Value="@("production")">Production Summary</MudSelectItem>
-                        <MudSelectItem Value="@("inventory")">Inventory Status</MudSelectItem>
-                        <MudSelectItem Value="@("materials")">Raw Materials Usage</MudSelectItem>
-                        <MudSelectItem Value="@("orders")">Orders Analysis</MudSelectItem>
-                        <MudSelectItem Value="@("custom")">Custom Report</MudSelectItem>
+                    <MudSelect T="string" Label="@Localization.Translate("ReportType")" @bind-Value="selectedReportType" Variant="Variant.Outlined">
+                        <MudSelectItem Value="@("production")">@Localization.Translate("ProductionSummaryReport")</MudSelectItem>
+                        <MudSelectItem Value="@("inventory")">@Localization.Translate("InventoryStatusReport")</MudSelectItem>
+                        <MudSelectItem Value="@("materials")">@Localization.Translate("RawMaterialsUsage")</MudSelectItem>
+                        <MudSelectItem Value="@("orders")">@Localization.Translate("OrdersAnalysis")</MudSelectItem>
+                        <MudSelectItem Value="@("custom")">@Localization.Translate("CustomReport")</MudSelectItem>
                     </MudSelect>
                 </MudItem>
                 <MudItem xs="12" md="3">
-                    <MudDatePicker Label="Start Date" @bind-Date="startDate" Variant="Variant.Outlined" />
+                    <MudDatePicker Label="@Localization.Translate("StartDate")" @bind-Date="startDate" Variant="Variant.Outlined" />
                 </MudItem>
                 <MudItem xs="12" md="3">
-                    <MudDatePicker Label="End Date" @bind-Date="endDate" Variant="Variant.Outlined" />
+                    <MudDatePicker Label="@Localization.Translate("EndDate")" @bind-Date="endDate" Variant="Variant.Outlined" />
                 </MudItem>
                 <MudItem xs="12" md="2">
                     <MudButton Variant="Variant.Filled" Color="Color.Primary" 
@@ -46,7 +49,7 @@
                                OnClick="GenerateReport"
                                FullWidth="true"
                                Class="mt-1">
-                        Generate
+                        @Localization.Translate("Generate")
                     </MudButton>
                 </MudItem>
             </MudGrid>
@@ -54,33 +57,33 @@
             @if (!string.IsNullOrEmpty(selectedReportType))
             {
                 <MudDivider Class="my-4" />
-                <MudText Typo="Typo.h6" Class="mb-3">Report Options</MudText>
+                <MudText Typo="Typo.h6" Class="mb-3">@Localization.Translate("ReportOptions")</MudText>
                 <MudGrid>
                     <MudItem xs="12" md="4">
-                        <MudCheckBox T="bool" @bind-Value="includeCharts" Label="Include Charts" Color="Color.Primary" />
+                        <MudCheckBox T="bool" @bind-Value="includeCharts" Label="@Localization.Translate("IncludeCharts")" Color="Color.Primary" />
                     </MudItem>
                     <MudItem xs="12" md="4">
-                        <MudCheckBox T="bool" @bind-Value="includeDetails" Label="Include Details" Color="Color.Primary" />
+                        <MudCheckBox T="bool" @bind-Value="includeDetails" Label="@Localization.Translate("IncludeDetails")" Color="Color.Primary" />
                     </MudItem>
                     <MudItem xs="12" md="4">
-                        <MudCheckBox T="bool" @bind-Value="groupByProduct" Label="Group by Product" Color="Color.Primary" />
+                        <MudCheckBox T="bool" @bind-Value="groupByProduct" Label="@Localization.Translate("GroupByProduct")" Color="Color.Primary" />
                     </MudItem>
                 </MudGrid>
             }
         </MudCardContent>
         <MudCardActions>
             <MudButton Variant="Variant.Text" Color="Color.Secondary" StartIcon="@Icons.Material.Filled.Download">
-                Export PDF
+                @Localization.Translate("ExportPDF")
             </MudButton>
             <MudButton Variant="Variant.Text" 
                        Color="Color.Success" 
                        StartIcon="@Icons.Material.Filled.TableChart"
                        OnClick="ExportToExcel"
                        Disabled="@(!reportGenerated)">
-                Export Excel
+                @Localization.Translate("ExportExcel")
             </MudButton>
             <MudButton Variant="Variant.Text" Color="Color.Info" StartIcon="@Icons.Material.Filled.Save">
-                Save Template
+                @Localization.Translate("SaveTemplate")
             </MudButton>
         </MudCardActions>
     </MudCard>
@@ -97,7 +100,7 @@
             <MudCard Class="mb-4">
                 <MudCardHeader>
                     <CardHeaderContent>
-                        <MudText Typo="Typo.h5">Production Summary Report</MudText>
+                        <MudText Typo="Typo.h5">@Localization.Translate("ProductionSummaryReportTitle")</MudText>
                         <MudText Typo="Typo.body2">@startDate?.ToString("MMM dd, yyyy") - @endDate?.ToString("MMM dd, yyyy")</MudText>
                     </CardHeaderContent>
                 </MudCardHeader>
@@ -112,25 +115,25 @@
                             <MudItem xs="12" md="3">
                                 <MudPaper Class="pa-4" Elevation="2">
                                     <MudText Typo="Typo.h6" Color="Color.Primary">@filteredOrders.Count</MudText>
-                                    <MudText Typo="Typo.body2">Orders Completed</MudText>
+                                    <MudText Typo="Typo.body2">@Localization.Translate("OrdersCompleted")</MudText>
                                 </MudPaper>
                             </MudItem>
                             <MudItem xs="12" md="3">
                                 <MudPaper Class="pa-4" Elevation="2">
                                     <MudText Typo="Typo.h6" Color="Color.Success">@filteredOrders.Sum(o => o.Quantity)</MudText>
-                                    <MudText Typo="Typo.body2">Total Units</MudText>
+                                    <MudText Typo="Typo.body2">@Localization.Translate("TotalUnits")</MudText>
                                 </MudPaper>
                             </MudItem>
                             <MudItem xs="12" md="3">
                                 <MudPaper Class="pa-4" Elevation="2">
                                     <MudText Typo="Typo.h6" Color="Color.Info">@filteredOrders.GroupBy(o => o.ProductName).Count()</MudText>
-                                    <MudText Typo="Typo.body2">Product Types</MudText>
+                                    <MudText Typo="Typo.body2">@Localization.Translate("ProductTypes")</MudText>
                                 </MudPaper>
                             </MudItem>
                             <MudItem xs="12" md="3">
                                 <MudPaper Class="pa-4" Elevation="2">
                                     <MudText Typo="Typo.h6" Color="Color.Warning">@(filteredOrders.Any() ? (filteredOrders.Sum(o => o.Quantity) / (double)filteredOrders.Count).ToString("F1") : "0")</MudText>
-                                    <MudText Typo="Typo.body2">Avg Units/Order</MudText>
+                                    <MudText Typo="Typo.body2">@Localization.Translate("AvgUnitsOrder")</MudText>
                                 </MudPaper>
                             </MudItem>
                         </MudGrid>
@@ -138,13 +141,13 @@
                         @if (includeDetails && filteredOrders.Any())
                         {
                             <MudDivider Class="my-4" />
-                            <MudText Typo="Typo.h6" Class="mb-3">Production Details</MudText>
+                            <MudText Typo="Typo.h6" Class="mb-3">@Localization.Translate("ProductionDetails")</MudText>
                             <MudTable Items="@filteredOrders" Hover="true" Striped="true" Dense="true">
                                 <HeaderContent>
-                                    <MudTh>Order #</MudTh>
-                                    <MudTh>Product</MudTh>
-                                    <MudTh>Quantity</MudTh>
-                                    <MudTh>Completed Date</MudTh>
+                                    <MudTh>@Localization.Translate("OrderNumber")</MudTh>
+                                    <MudTh>@Localization.Translate("Product")</MudTh>
+                                    <MudTh>@Localization.Translate("Quantity")</MudTh>
+                                    <MudTh>@Localization.Translate("CompletedDate")</MudTh>
                                 </HeaderContent>
                                 <RowTemplate>
                                     <MudTd DataLabel="Order #">@context.OrderNumber</MudTd>
@@ -165,8 +168,8 @@
             <MudCard Class="mb-4">
                 <MudCardHeader>
                     <CardHeaderContent>
-                        <MudText Typo="Typo.h5">Inventory Status Report</MudText>
-                        <MudText Typo="Typo.body2">Current Status as of @DateTime.Now.ToString("MMM dd, yyyy")</MudText>
+                        <MudText Typo="Typo.h5">@Localization.Translate("InventoryStatusReportTitle")</MudText>
+                        <MudText Typo="Typo.body2">@Localization.Translate("CurrentStatusAsOf") @DateTime.Now.ToString("MMM dd, yyyy")</MudText>
                     </CardHeaderContent>
                 </MudCardHeader>
                 <MudCardContent>
@@ -179,19 +182,19 @@
                             <MudItem xs="12" md="4">
                                 <MudPaper Class="pa-4" Elevation="2">
                                     <MudText Typo="Typo.h6" Color="Color.Primary">@materials.Count()</MudText>
-                                    <MudText Typo="Typo.body2">Total Materials</MudText>
+                                    <MudText Typo="Typo.body2">@Localization.Translate("TotalMaterials")</MudText>
                                 </MudPaper>
                             </MudItem>
                             <MudItem xs="12" md="4">
                                 <MudPaper Class="pa-4" Elevation="2">
                                     <MudText Typo="Typo.h6" Color="Color.Error">@lowStockItems.Count</MudText>
-                                    <MudText Typo="Typo.body2">Low Stock Alerts</MudText>
+                                    <MudText Typo="Typo.body2">@Localization.Translate("LowStockAlerts")</MudText>
                                 </MudPaper>
                             </MudItem>
                             <MudItem xs="12" md="4">
                                 <MudPaper Class="pa-4" Elevation="2">
                                     <MudText Typo="Typo.h6" Color="Color.Success">@adequateStock.Count</MudText>
-                                    <MudText Typo="Typo.body2">Adequate Stock</MudText>
+                                    <MudText Typo="Typo.body2">@Localization.Translate("AdequateStock")</MudText>
                                 </MudPaper>
                             </MudItem>
                         </MudGrid>
@@ -200,15 +203,15 @@
                         {
                             <MudDivider Class="my-4" />
                             <MudAlert Severity="Severity.Warning" Class="mb-3">
-                                <strong>Attention Required:</strong> @lowStockItems.Count materials need restocking
+                                <strong>@Localization.Translate("AttentionRequired")</strong> @lowStockItems.Count @Localization.Translate("MaterialsNeedRestocking")
                             </MudAlert>
                             <MudTable Items="@lowStockItems" Hover="true" Dense="true">
                                 <HeaderContent>
-                                    <MudTh>Material</MudTh>
-                                    <MudTh>Code</MudTh>
-                                    <MudTh>Current Stock</MudTh>
-                                    <MudTh>Minimum Stock</MudTh>
-                                    <MudTh>Shortage</MudTh>
+                                    <MudTh>@Localization.Translate("Material")</MudTh>
+                                    <MudTh>@Localization.Translate("Code")</MudTh>
+                                    <MudTh>@Localization.Translate("CurrentStock")</MudTh>
+                                    <MudTh>@Localization.Translate("MinimumStock")</MudTh>
+                                    <MudTh>@Localization.Translate("Shortage")</MudTh>
                                 </HeaderContent>
                                 <RowTemplate>
                                     <MudTd DataLabel="Material">@context.Name</MudTd>
@@ -234,10 +237,9 @@
             <MudCard>
                 <MudCardContent>
                     <MudAlert Severity="Severity.Info">
-                        <strong>Custom Report Builder</strong>
+                        <strong>@Localization.Translate("CustomReportBuilder")</strong>
                         <br />
-                        Design your own reports by selecting specific metrics, groupings, and visualizations.
-                        This feature allows you to create tailored reports for your specific business needs.
+                        @Localization.Translate("CustomReportDescription")
                     </MudAlert>
                 </MudCardContent>
             </MudCard>
@@ -262,11 +264,22 @@
 
     protected override async Task OnInitializedAsync()
     {
+        Localization.OnLanguageChanged += HandleLanguageChanged;
         isLoading = true;
         orders = await OrderService.GetAllOrdersAsync();
         materials = await MaterialService.GetAllMaterialsAsync();
         products = await ProductService.GetAllProductsAsync();
         isLoading = false;
+    }
+
+    private async void HandleLanguageChanged()
+    {
+        await InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        Localization.OnLanguageChanged -= HandleLanguageChanged;
     }
 
     private async Task GenerateReport()
