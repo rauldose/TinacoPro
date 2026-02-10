@@ -107,12 +107,12 @@
                 StateHasChanged();
             }
 
-            // Load language preference from localStorage
+            // Load language preference from localStorage and apply to LocalizationService
             var storedLanguage = await JS.InvokeAsync<string?>("localStorage.getItem", "language");
             if (!string.IsNullOrEmpty(storedLanguage))
             {
                 _currentLanguage = storedLanguage;
-                StateHasChanged();
+                await Localization.SetLanguageAsync(storedLanguage);
             }
         }
     }

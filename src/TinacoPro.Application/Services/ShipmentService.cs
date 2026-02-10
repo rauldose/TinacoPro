@@ -105,10 +105,51 @@ public class ShipmentService
         if (shipment.Status == ShipmentStatus.Delivered || shipment.Status == ShipmentStatus.Cancelled)
             throw new InvalidOperationException($"Cannot update shipment with status {shipment.Status}");
 
-        // Restore old stock if FinishedGoodId changed
-        if (shipment.FinishedGoodId.HasValue && shipment.FinishedGoodId != dto.FinishedGoodId)
+        var oldFinishedGoodId = shipment.FinishedGoodId;
+        var oldQuantity = shipment.Quantity;
+        var batchChanged = oldFinishedGoodId != dto.FinishedGoodId;
+        var quantityChanged = oldQuantity != dto.Quantity;
+
+        if (batchChanged)
         {
-            await RestoreFinishedGoodsStockAsync(shipment.FinishedGoodId.Value, shipment.Quantity);
+            // Batch changed: restore old stock, deplete from new batch
+            if (oldFinishedGoodId.HasValue)
+            {
+                await RestoreFinishedGoodsStockAsync(oldFinishedGoodId.Value, oldQuantity);
+            }
+            if (dto.FinishedGoodId.HasValue)
+            {
+                await DepleteFinishedGoodsStockAsync(dto.FinishedGoodId.Value, dto.Quantity);
+            }
+            else
+            {
+                // No batch selected — auto-deplete from available batches
+                var assignedBatchId = await AutoDepleteFinishedGoodsAsync(dto.ProductId, dto.Quantity);
+                dto.FinishedGoodId = assignedBatchId;
+            }
+        }
+        else if (quantityChanged && oldFinishedGoodId.HasValue)
+        {
+            // Same batch, quantity changed: adjust the difference
+            var quantityDifference = dto.Quantity - oldQuantity;
+            if (quantityDifference > 0)
+            {
+                await DepleteFinishedGoodsStockAsync(oldFinishedGoodId.Value, quantityDifference);
+            }
+            else
+            {
+                await RestoreFinishedGoodsStockAsync(oldFinishedGoodId.Value, -quantityDifference);
+            }
+        }
+        else if (quantityChanged && !oldFinishedGoodId.HasValue)
+        {
+            // No batch was assigned, quantity changed — auto-deplete the difference
+            var quantityDifference = dto.Quantity - oldQuantity;
+            if (quantityDifference > 0)
+            {
+                var assignedBatchId = await AutoDepleteFinishedGoodsAsync(dto.ProductId, quantityDifference);
+                dto.FinishedGoodId = assignedBatchId;
+            }
         }
 
         // Update shipment properties
@@ -123,12 +164,6 @@ public class ShipmentService
         shipment.ShipmentDate = dto.ShipmentDate;
         shipment.ExpectedDeliveryDate = dto.ExpectedDeliveryDate;
         shipment.Notes = dto.Notes;
-
-        // Deplete new stock if FinishedGoodId specified
-        if (dto.FinishedGoodId.HasValue && shipment.FinishedGoodId != dto.FinishedGoodId)
-        {
-            await DepleteFinishedGoodsStockAsync(dto.FinishedGoodId.Value, dto.Quantity);
-        }
 
         await _shipmentRepository.UpdateAsync(shipment);
         
@@ -233,10 +268,10 @@ public class ShipmentService
         if (finishedGood == null)
             throw new InvalidOperationException($"Finished good with ID {finishedGoodId} not found");
 
-        if (finishedGood.Quantity < quantity)
-            throw new InvalidOperationException($"Insufficient stock. Available: {finishedGood.Quantity}, Required: {quantity}");
+        if (finishedGood.CurrentStock < quantity)
+            throw new InvalidOperationException($"Insufficient stock. Available: {finishedGood.CurrentStock}, Required: {quantity}");
 
-        finishedGood.Quantity -= quantity;
+        finishedGood.CurrentStock -= quantity;
         await _finishedGoodRepository.UpdateAsync(finishedGood);
     }
 
@@ -249,14 +284,14 @@ public class ShipmentService
     {
         var batches = await _finishedGoodRepository.GetByProductIdAsync(productId);
         var availableBatches = batches
-            .Where(fg => fg.Quantity > 0)
+            .Where(fg => fg.CurrentStock > 0)
             .OrderBy(fg => fg.ProductionDate)
             .ToList();
 
         if (!availableBatches.Any())
             return null;
 
-        var totalAvailable = availableBatches.Sum(fg => fg.Quantity);
+        var totalAvailable = availableBatches.Sum(fg => fg.CurrentStock);
         if (totalAvailable < quantity)
             throw new InvalidOperationException($"Insufficient finished goods stock for product ID {productId}. Available: {totalAvailable}, Required: {quantity}");
 
@@ -269,8 +304,8 @@ public class ShipmentService
 
             primaryBatchId ??= batch.Id;
 
-            var depleteAmount = Math.Min(batch.Quantity, remaining);
-            batch.Quantity -= depleteAmount;
+            var depleteAmount = Math.Min(batch.CurrentStock, remaining);
+            batch.CurrentStock -= depleteAmount;
             remaining -= depleteAmount;
             await _finishedGoodRepository.UpdateAsync(batch);
         }
@@ -284,7 +319,7 @@ public class ShipmentService
         if (finishedGood == null)
             throw new InvalidOperationException($"Finished good with ID {finishedGoodId} not found");
 
-        finishedGood.Quantity += quantity;
+        finishedGood.CurrentStock += quantity;
         await _finishedGoodRepository.UpdateAsync(finishedGood);
     }
 

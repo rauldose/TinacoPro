@@ -109,7 +109,7 @@ else
                            HelperText="@Localization.Translate("AutoSelectBatchHelp")">
                     @foreach (var fg in FilteredFinishedGoods)
                     {
-                        <MudSelectItem T="int?" Value="@fg.Id">@fg.ProductName - Batch: @fg.BatchNumber (@Localization.Translate("Available"): @fg.Quantity)</MudSelectItem>
+                        <MudSelectItem T="int?" Value="@fg.Id">@fg.ProductName - Batch: @fg.BatchNumber (@Localization.Translate("Available"): @fg.CurrentStock)</MudSelectItem>
                     }
                 </MudSelect>
             </MudItem>
@@ -176,7 +176,7 @@ else
             if (finishedGoods == null) return Enumerable.Empty<FinishedGoodsDto>();
             // Filter by selected product and only show batches with available stock
             return finishedGoods
-                .Where(fg => fg.ProductId == editingShipment.ProductId && fg.Quantity > 0)
+                .Where(fg => fg.ProductId == editingShipment.ProductId && fg.CurrentStock > 0)
                 .OrderBy(fg => fg.ProductionDate);
         }
     }
