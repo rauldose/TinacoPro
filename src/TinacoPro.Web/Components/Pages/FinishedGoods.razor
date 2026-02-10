@@ -5,6 +5,7 @@
 @inject FinishedGoodsService FinishedGoodsService
 @inject ProductService ProductService
 @inject ProductionOrderService ProductionOrderService
+@inject IDialogService DialogService
 
 <PageTitle>Finished Goods - TinacoPro</PageTitle>
 
@@ -176,15 +177,23 @@ else
 
     private async Task DeleteFinishedGood(int id)
     {
-        await FinishedGoodsService.DeleteAsync(id);
-        await LoadData();
+        var result = await DialogService.ShowMessageBox(
+            "Confirm Delete",
+            "Are you sure you want to delete this finished goods entry? This action cannot be undone.",
+            yesText: "Delete", cancelText: "Cancel");
+
+        if (result == true)
+        {
+            await FinishedGoodsService.DeleteAsync(id);
+            await LoadData();
+        }
     }
 
     private class FinishedGoodFormModel
     {
         public int ProductId { get; set; }
         public int ProductionOrderId { get; set; }
-        public int Quantity { get; set; }
+        public decimal Quantity { get; set; }
         public decimal CurrentStock { get; set; }
         public string BatchNumber { get; set; } = string.Empty;
         public string Notes { get; set; } = string.Empty;

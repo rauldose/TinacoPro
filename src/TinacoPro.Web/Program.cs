@@ -35,6 +35,7 @@ builder.Services.AddScoped<ISupplierRepository, SupplierRepository>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IProductTemplateRepository, ProductTemplateRepository>();
 builder.Services.AddScoped<IFinishedGoodRepository, FinishedGoodRepository>();
+builder.Services.AddScoped<IMaterialConsumptionLogRepository, MaterialConsumptionLogRepository>();
 
 // Register application services
 builder.Services.AddScoped<ProductService>();

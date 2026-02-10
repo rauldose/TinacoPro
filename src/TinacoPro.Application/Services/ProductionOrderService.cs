@@ -11,19 +11,22 @@ public class ProductionOrderService
     private readonly IRawMaterialRepository _materialRepository;
     private readonly IProductTemplateRepository _templateRepository;
     private readonly IFinishedGoodRepository _finishedGoodRepository;
+    private readonly IMaterialConsumptionLogRepository _consumptionLogRepository;
 
     public ProductionOrderService(
         IProductionOrderRepository orderRepository,
         IProductRepository productRepository,
         IRawMaterialRepository materialRepository,
         IProductTemplateRepository templateRepository,
-        IFinishedGoodRepository finishedGoodRepository)
+        IFinishedGoodRepository finishedGoodRepository,
+        IMaterialConsumptionLogRepository consumptionLogRepository)
     {
         _orderRepository = orderRepository;
         _productRepository = productRepository;
         _materialRepository = materialRepository;
         _templateRepository = templateRepository;
         _finishedGoodRepository = finishedGoodRepository;
+        _consumptionLogRepository = consumptionLogRepository;
     }
 
     public async Task<IEnumerable<ProductionOrderDto>> GetAllOrdersAsync()
@@ -209,8 +212,19 @@ public class ProductionOrderService
                 material.CurrentStock -= quantityToDeplete;
                 await _materialRepository.UpdateAsync(material);
 
-                // Note: MaterialConsumptionLog creation would go here if we had a repository for it
-                // For now, we're focusing on the core depletion logic
+                // Log material consumption
+                var consumptionLog = new MaterialConsumptionLog
+                {
+                    ProductionOrderId = order.Id,
+                    RawMaterialId = material.Id,
+                    QuantityConsumed = quantityToDeplete,
+                    UnitCostAtConsumption = material.UnitCost,
+                    TotalCost = quantityToDeplete * material.UnitCost,
+                    ConsumedAt = DateTime.UtcNow,
+                    Notes = $"Auto-consumed from template for order {order.OrderNumber}",
+                    CreatedAt = DateTime.UtcNow
+                };
+                await _consumptionLogRepository.AddAsync(consumptionLog);
             }
         }
     }
@@ -251,6 +265,20 @@ public class ProductionOrderService
                 var requiredQuantity = pm.QuantityRequired * order.Quantity;
                 material.CurrentStock -= requiredQuantity;
                 await _materialRepository.UpdateAsync(material);
+
+                // Log material consumption
+                var consumptionLog = new MaterialConsumptionLog
+                {
+                    ProductionOrderId = order.Id,
+                    RawMaterialId = material.Id,
+                    QuantityConsumed = requiredQuantity,
+                    UnitCostAtConsumption = material.UnitCost,
+                    TotalCost = requiredQuantity * material.UnitCost,
+                    ConsumedAt = DateTime.UtcNow,
+                    Notes = $"Auto-consumed from BOM for order {order.OrderNumber}",
+                    CreatedAt = DateTime.UtcNow
+                };
+                await _consumptionLogRepository.AddAsync(consumptionLog);
             }
         }
     }

@@ -6,7 +6,7 @@ public class FinishedGood : BaseEntity
 {
     public int ProductId { get; set; }
     public int ProductionOrderId { get; set; }
-    public int Quantity { get; set; }
+    public decimal Quantity { get; set; }
     public decimal CurrentStock { get; set; }
     public DateTime ProductionDate { get; set; }
     public string BatchNumber { get; set; } = string.Empty;
