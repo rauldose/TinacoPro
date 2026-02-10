@@ -68,6 +68,7 @@ else
     <DialogContent>
         @if (editingFinishedGood == null)
         {
+            <!-- Create Mode - All fields editable -->
             <MudSelect T="int" @bind-Value="formModel.ProductId" Label="@Localization.Translate("Product")" Variant="Variant.Outlined" Class="mb-3" Required="true">
                 @if (products != null)
                 {
@@ -88,8 +89,18 @@ else
             </MudSelect>
             <MudNumericField @bind-Value="formModel.Quantity" Label="@Localization.Translate("QuantityProduced")" Variant="Variant.Outlined" Class="mb-3" Min="0" Required="true" />
             <MudTextField @bind-Value="formModel.BatchNumber" Label="@Localization.Translate("BatchNumber")" Variant="Variant.Outlined" Class="mb-3" />
+            <MudNumericField @bind-Value="formModel.CurrentStock" Label="@Localization.Translate("CurrentStock")" Variant="Variant.Outlined" Class="mb-3" Min="0" Required="true" />
         }
-        <MudNumericField @bind-Value="formModel.CurrentStock" Label="@Localization.Translate("CurrentStock")" Variant="Variant.Outlined" Class="mb-3" Min="0" Required="true" />
+        else
+        {
+            <!-- Edit Mode - Show all information, make relevant fields editable -->
+            <MudTextField Value="@editingFinishedGood.ProductName" Label="@Localization.Translate("Product")" Variant="Variant.Outlined" Class="mb-3" ReadOnly="true" />
+            <MudTextField Value="@editingFinishedGood.OrderNumber" Label="@Localization.Translate("ProductionOrder")" Variant="Variant.Outlined" Class="mb-3" ReadOnly="true" />
+            <MudTextField Value="@editingFinishedGood.ProductionDate.ToString("yyyy-MM-dd")" Label="@Localization.Translate("ProductionDate")" Variant="Variant.Outlined" Class="mb-3" ReadOnly="true" />
+            <MudTextField @bind-Value="formModel.BatchNumber" Label="@Localization.Translate("BatchNumber")" Variant="Variant.Outlined" Class="mb-3" />
+            <MudNumericField @bind-Value="formModel.Quantity" Label="@Localization.Translate("QuantityProduced")" Variant="Variant.Outlined" Class="mb-3" Min="0" Required="true" />
+            <MudNumericField @bind-Value="formModel.CurrentStock" Label="@Localization.Translate("CurrentStock")" Variant="Variant.Outlined" Class="mb-3" Min="0" Required="true" />
+        }
         <MudTextField @bind-Value="formModel.Notes" Label="@Localization.Translate("Notes")" Variant="Variant.Outlined" Lines="3" Class="mb-3" />
     </DialogContent>
     <DialogActions>

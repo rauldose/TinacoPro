@@ -175,6 +175,7 @@ public class LocalizationService
                 ["None"] = "None",
                 ["RootLevel"] = "Root Level",
                 ["Quantity"] = "Quantity",
+                ["ProductionDate"] = "Production Date",
             },
             ["es"] = new Dictionary<string, string>
             {
@@ -329,6 +330,7 @@ public class LocalizationService
                 ["None"] = "Ninguno",
                 ["RootLevel"] = "Nivel Raíz",
                 ["Quantity"] = "Cantidad",
+                ["ProductionDate"] = "Fecha de Producción",
             }
         };
     }
