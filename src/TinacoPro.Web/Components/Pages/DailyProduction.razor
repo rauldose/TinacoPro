@@ -180,6 +180,7 @@ else
             return;
 
         int ordersCreated = 0;
+        int ordersAutoCompleted = 0;
 
         try
         {
@@ -195,13 +196,21 @@ else
                         : productionNotes
                 };
                 
-                await OrderService.CreateOrderAsync(createDto);
+                var (order, autoCompleted) = await OrderService.CreateDailyProductionOrderAsync(createDto);
                 ordersCreated++;
+                if (autoCompleted)
+                    ordersAutoCompleted++;
             }
 
             if (ordersCreated > 0)
             {
                 Snackbar.Add(string.Format(Localization.Translate("ProductionOrdersCreatedSuccess"), ordersCreated), Severity.Success);
+                Snackbar.Add(Localization.Translate("OrderAutoStarted"), Severity.Info);
+                
+                if (ordersAutoCompleted > 0)
+                {
+                    Snackbar.Add(Localization.Translate("OrderAutoCompleted"), Severity.Success);
+                }
                 
                 // Reset form
                 foreach (var key in productQuantities.Keys.ToList())

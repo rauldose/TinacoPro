@@ -113,6 +113,57 @@ public class ProductionOrderService
         };
     }
 
+    /// <summary>
+    /// Creates a production order from daily production entry with automation:
+    /// - Automatically sets the order to InProgress
+    /// - Checks existing InProgress orders for the same product to auto-complete if target is met
+    /// </summary>
+    public async Task<(ProductionOrderDto Order, bool AutoCompleted)> CreateDailyProductionOrderAsync(CreateProductionOrderDto dto)
+    {
+        // First create the order normally
+        var orderDto = await CreateOrderAsync(dto);
+        
+        // Auto-start the order (Pending -> InProgress)
+        await StartOrderAsync(orderDto.Id);
+        orderDto.Status = "InProgress";
+
+        // Check existing InProgress orders for this product to see if any should be auto-completed
+        bool autoCompleted = false;
+        var allOrders = await _orderRepository.GetAllAsync();
+        var inProgressOrders = allOrders
+            .Where(o => o.ProductId == dto.ProductId && o.Status == OrderStatus.InProgress && o.Id != orderDto.Id)
+            .OrderBy(o => o.OrderDate)
+            .ToList();
+
+        foreach (var existingOrder in inProgressOrders)
+        {
+            // Calculate total production for this product from all completed and current orders
+            var completedOrders = allOrders
+                .Where(o => o.ProductId == dto.ProductId && o.Status == OrderStatus.Completed)
+                .ToList();
+            
+            var totalProduced = completedOrders.Sum(o => o.Quantity) + dto.Quantity;
+            
+            // If total produced meets or exceeds the existing order's target, auto-complete it
+            if (totalProduced >= existingOrder.Quantity)
+            {
+                try
+                {
+                    await CompleteOrderAsync(existingOrder.Id);
+                    autoCompleted = true;
+                }
+                catch
+                {
+                    // If completion fails (e.g., insufficient materials), keep it InProgress
+                }
+            }
+        }
+        
+        // Refresh the order DTO to get updated status
+        var refreshedOrder = await GetOrderByIdAsync(orderDto.Id);
+        return (refreshedOrder ?? orderDto, autoCompleted);
+    }
+
     public async Task StartOrderAsync(int orderId)
     {
         var order = await _orderRepository.GetByIdAsync(orderId);
