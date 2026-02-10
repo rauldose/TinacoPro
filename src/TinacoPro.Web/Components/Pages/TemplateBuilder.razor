@@ -121,12 +121,12 @@
                         }
                         else
                         {
-                            <MudPaper Class="pa-2">
+                            <MudTreeView T="TreeItemData" @bind-SelectedValue="selectedTreeItem" Hover="true" Dense="true">
                                 @foreach (var part in selectedTemplate.RootParts.OrderBy(p => p.Position))
                                 {
-                                    <RenderPart Part="@part" />
+                                    @RenderTreeItem(part, 0)
                                 }
-                            </MudPaper>
+                            </MudTreeView>
                         }
                     </MudCardContent>
                 </MudCard>
@@ -207,6 +207,48 @@
     </DialogActions>
 </MudDialog>
 
+<!-- Context Menu -->
+@if (showContextMenu && contextMenuPart != null)
+{
+    <div style="position: fixed; top: @(contextMenuY)px; left: @(contextMenuX)px; z-index: 9999; background: white; box-shadow: 0 4px 8px rgba(0,0,0,0.2); border-radius: 4px;"
+         @onclick:stopPropagation="true">
+        <MudList T="string" Clickable="true" Dense="true">
+            <MudListItem T="string" OnClick="@(() => OpenAddChildDialog(contextMenuPart))">
+                <div class="d-flex align-center">
+                    <MudIcon Icon="@Icons.Material.Filled.Add" Size="Size.Small" Class="mr-2" />
+                    <MudText Typo="Typo.body2">Add Child Part</MudText>
+                </div>
+            </MudListItem>
+            <MudListItem T="string" OnClick="@(() => OpenEditPartDialog(contextMenuPart))">
+                <div class="d-flex align-center">
+                    <MudIcon Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Class="mr-2" />
+                    <MudText Typo="Typo.body2">Edit Part</MudText>
+                </div>
+            </MudListItem>
+            <MudListItem T="string" OnClick="@(() => DeletePart(contextMenuPart.Id))">
+                <div class="d-flex align-center">
+                    <MudIcon Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error" Class="mr-2" />
+                    <MudText Typo="Typo.body2" Color="Color.Error">Delete Part</MudText>
+                </div>
+            </MudListItem>
+            <MudDivider />
+            <MudListItem T="string" OnClick="@(() => MovePartUp(contextMenuPart))">
+                <div class="d-flex align-center">
+                    <MudIcon Icon="@Icons.Material.Filled.ArrowUpward" Size="Size.Small" Class="mr-2" />
+                    <MudText Typo="Typo.body2">Move Up</MudText>
+                </div>
+            </MudListItem>
+            <MudListItem T="string" OnClick="@(() => MovePartDown(contextMenuPart))">
+                <div class="d-flex align-center">
+                    <MudIcon Icon="@Icons.Material.Filled.ArrowDownward" Size="Size.Small" Class="mr-2" />
+                    <MudText Typo="Typo.body2">Move Down</MudText>
+                </div>
+            </MudListItem>
+        </MudList>
+    </div>
+    <div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 9998;" @onclick="HideContextMenu"></div>
+}
+
 @code {
     private List<ProductTemplateDto> templates = new();
     private List<RawMaterialDto> materials = new();
@@ -215,6 +257,11 @@
     private TemplatePartDto editingPart = new();
     private bool showTemplateDialog;
     private bool showPartDialog;
+    private TreeItemData? selectedTreeItem;
+    private TemplatePartDto? contextMenuPart;
+    private bool showContextMenu;
+    private double contextMenuX;
+    private double contextMenuY;
 
     protected override async Task OnInitializedAsync()
     {
@@ -230,6 +277,7 @@
     private async Task SelectTemplate(ProductTemplateDto template)
     {
         selectedTemplate = await TemplateService.GetTemplateByIdAsync(template.Id);
+        selectedTreeItem = null;
         StateHasChanged();
     }
 
@@ -415,95 +463,252 @@
         }
     }
 
-    private RenderFragment<TemplatePartDto> RenderPart => part => builder =>
+    // TreeView helper class
+    public class TreeItemData
     {
-        string icon = part.PartType switch
+        public TemplatePartDto Part { get; set; } = null!;
+        public string Icon { get; set; } = string.Empty;
+        public string DisplayText { get; set; } = string.Empty;
+    }
+
+    private RenderFragment RenderTreeItem(TemplatePartDto part, int depth)
+    {
+        return builder =>
         {
-            "Assembly" => Icons.Material.Filled.AccountTree,
-            "Material" => Icons.Material.Filled.Science,
-            "Component" => Icons.Material.Filled.Build,
-            "Process" => Icons.Material.Filled.Settings,
-            _ => Icons.Material.Filled.Circle
-        };
-
-        builder.OpenElement(0, "div");
-        builder.AddAttribute(1, "class", "mb-2");
-
-        builder.OpenComponent<MudPaper>(2);
-        builder.AddAttribute(3, "Class", "pa-2 mb-1");
-        builder.AddAttribute(4, "Elevation", 1);
-        builder.AddAttribute(5, "ChildContent", (RenderFragment)(contentBuilder =>
-        {
-            contentBuilder.OpenElement(0, "div");
-            contentBuilder.AddAttribute(1, "class", "d-flex justify-space-between align-center");
-
-            // Left side: Part info
-            contentBuilder.OpenElement(2, "div");
-            contentBuilder.AddAttribute(3, "class", "d-flex align-center");
-
-            contentBuilder.OpenComponent<MudIcon>(4);
-            contentBuilder.AddAttribute(5, "Icon", icon);
-            contentBuilder.AddAttribute(6, "Size", Size.Small);
-            contentBuilder.AddAttribute(7, "Class", "mr-2");
-            contentBuilder.CloseComponent();
-
-            contentBuilder.OpenElement(8, "div");
-            contentBuilder.OpenComponent<MudText>(9);
-            contentBuilder.AddAttribute(10, "Typo", Typo.body2);
-            contentBuilder.AddAttribute(11, "ChildContent", (RenderFragment)(b => b.AddContent(0, $"{part.Name}")));
-            contentBuilder.CloseComponent();
-
-            contentBuilder.OpenComponent<MudText>(12);
-            contentBuilder.AddAttribute(13, "Typo", Typo.caption);
-            contentBuilder.AddAttribute(14, "Color", Color.Secondary);
-            contentBuilder.AddAttribute(15, "ChildContent", (RenderFragment)(b =>
+            var icon = part.PartType switch
             {
-                b.AddContent(0, $"{part.PartType} | {part.Quantity} {part.Unit}");
-                if (part.UnitCost > 0 || part.LaborCost > 0)
+                "Assembly" => Icons.Material.Filled.AccountTree,
+                "Material" => Icons.Material.Filled.Science,
+                "Component" => Icons.Material.Filled.Build,
+                "Process" => Icons.Material.Filled.Settings,
+                _ => Icons.Material.Filled.Circle
+            };
+
+            var treeItemData = new TreeItemData
+            {
+                Part = part,
+                Icon = icon,
+                DisplayText = part.Name
+            };
+
+            builder.OpenComponent<MudTreeViewItem<TreeItemData>>(0);
+            builder.AddAttribute(1, "Value", treeItemData);
+            builder.AddAttribute(2, "Icon", icon);
+            builder.AddAttribute(3, "CanExpand", part.Children?.Any() == true);
+            builder.AddAttribute(4, "Expanded", true);
+            builder.AddAttribute(5, "ChildContent", (RenderFragment)(contentBuilder =>
+            {
+                // Item content
+                contentBuilder.OpenElement(0, "div");
+                contentBuilder.AddAttribute(1, "class", "d-flex justify-space-between align-center flex-grow-1");
+                contentBuilder.AddAttribute(2, "style", "cursor: pointer;");
+                contentBuilder.AddAttribute(3, "oncontextmenu", EventCallback.Factory.Create<MouseEventArgs>(this, (e) => ShowContextMenu(e, part)));
+
+                // Left side: Part info
+                contentBuilder.OpenElement(4, "div");
+                contentBuilder.AddAttribute(5, "class", "d-flex flex-column");
+
+                contentBuilder.OpenComponent<MudText>(6);
+                contentBuilder.AddAttribute(7, "Typo", Typo.body2);
+                contentBuilder.AddAttribute(8, "ChildContent", (RenderFragment)(b => b.AddContent(0, part.Name)));
+                contentBuilder.CloseComponent();
+
+                contentBuilder.OpenComponent<MudText>(9);
+                contentBuilder.AddAttribute(10, "Typo", Typo.caption);
+                contentBuilder.AddAttribute(11, "Color", Color.Secondary);
+                contentBuilder.AddAttribute(12, "ChildContent", (RenderFragment)(b =>
                 {
-                    b.AddContent(1, $" | ${(part.UnitCost * part.Quantity + part.LaborCost):F2}");
+                    b.AddContent(0, $"{part.PartType} | {part.Quantity} {part.Unit}");
+                    if (part.UnitCost > 0 || part.LaborCost > 0)
+                    {
+                        b.AddContent(1, $" | ${part.TotalCost:F2}");
+                    }
+                }));
+                contentBuilder.CloseComponent();
+
+                contentBuilder.CloseElement(); // div
+
+                // Right side: Actions
+                contentBuilder.OpenElement(13, "div");
+                contentBuilder.AddAttribute(14, "class", "d-flex gap-1");
+
+                contentBuilder.OpenComponent<MudIconButton>(15);
+                contentBuilder.AddAttribute(16, "Icon", Icons.Material.Filled.Add);
+                contentBuilder.AddAttribute(17, "Size", Size.Small);
+                contentBuilder.AddAttribute(18, "Color", Color.Primary);
+                contentBuilder.AddAttribute(19, "Title", "Add Child Part");
+                contentBuilder.AddAttribute(20, "OnClick", EventCallback.Factory.Create(this, () => OpenAddChildDialog(part)));
+                contentBuilder.CloseComponent();
+
+                contentBuilder.OpenComponent<MudIconButton>(21);
+                contentBuilder.AddAttribute(22, "Icon", Icons.Material.Filled.Edit);
+                contentBuilder.AddAttribute(23, "Size", Size.Small);
+                contentBuilder.AddAttribute(24, "Color", Color.Info);
+                contentBuilder.AddAttribute(25, "Title", "Edit Part");
+                contentBuilder.AddAttribute(26, "OnClick", EventCallback.Factory.Create(this, () => OpenEditPartDialog(part)));
+                contentBuilder.CloseComponent();
+
+                contentBuilder.OpenComponent<MudIconButton>(27);
+                contentBuilder.AddAttribute(28, "Icon", Icons.Material.Filled.Delete);
+                contentBuilder.AddAttribute(29, "Size", Size.Small);
+                contentBuilder.AddAttribute(30, "Color", Color.Error);
+                contentBuilder.AddAttribute(31, "Title", "Delete Part");
+                contentBuilder.AddAttribute(32, "OnClick", EventCallback.Factory.Create(this, () => DeletePart(part.Id)));
+                contentBuilder.CloseComponent();
+
+                // Move up/down buttons for sibling reordering
+                if (part.ParentPartId.HasValue || selectedTemplate?.RootParts.Count > 1)
+                {
+                    contentBuilder.OpenComponent<MudIconButton>(33);
+                    contentBuilder.AddAttribute(34, "Icon", Icons.Material.Filled.ArrowUpward);
+                    contentBuilder.AddAttribute(35, "Size", Size.Small);
+                    contentBuilder.AddAttribute(36, "Title", "Move Up");
+                    contentBuilder.AddAttribute(37, "OnClick", EventCallback.Factory.Create(this, () => MovePartUp(part)));
+                    contentBuilder.CloseComponent();
+
+                    contentBuilder.OpenComponent<MudIconButton>(38);
+                    contentBuilder.AddAttribute(39, "Icon", Icons.Material.Filled.ArrowDownward);
+                    contentBuilder.AddAttribute(40, "Size", Size.Small);
+                    contentBuilder.AddAttribute(41, "Title", "Move Down");
+                    contentBuilder.AddAttribute(42, "OnClick", EventCallback.Factory.Create(this, () => MovePartDown(part)));
+                    contentBuilder.CloseComponent();
+                }
+
+                contentBuilder.CloseElement(); // div actions
+
+                contentBuilder.CloseElement(); // div flex
+
+                // Render children
+                if (part.Children?.Any() == true)
+                {
+                    contentBuilder.OpenComponent<MudTreeViewItemToggleButton>(43);
+                    contentBuilder.CloseComponent();
+
+                    foreach (var child in part.Children.OrderBy(c => c.Position))
+                    {
+                        contentBuilder.AddContent(44, RenderTreeItem(child, depth + 1));
+                    }
                 }
             }));
-            contentBuilder.CloseComponent();
 
-            contentBuilder.CloseElement(); // div
-            contentBuilder.CloseElement(); // d-flex
+            builder.CloseComponent(); // MudTreeViewItem
+        };
+    }
 
-            // Right side: Actions
-            contentBuilder.OpenElement(16, "div");
-            contentBuilder.OpenComponent<MudIconButton>(17);
-            contentBuilder.AddAttribute(18, "Icon", Icons.Material.Filled.Edit);
-            contentBuilder.AddAttribute(19, "Size", Size.Small);
-            contentBuilder.AddAttribute(20, "OnClick", EventCallback.Factory.Create(this, () => OpenEditPartDialog(part)));
-            contentBuilder.CloseComponent();
+    private void ShowContextMenu(MouseEventArgs e, TemplatePartDto part)
+    {
+        contextMenuPart = part;
+        contextMenuX = e.ClientX;
+        contextMenuY = e.ClientY;
+        showContextMenu = true;
+        StateHasChanged();
+    }
 
-            contentBuilder.OpenComponent<MudIconButton>(21);
-            contentBuilder.AddAttribute(22, "Icon", Icons.Material.Filled.Delete);
-            contentBuilder.AddAttribute(23, "Size", Size.Small);
-            contentBuilder.AddAttribute(24, "Color", Color.Error);
-            contentBuilder.AddAttribute(25, "OnClick", EventCallback.Factory.Create(this, () => DeletePart(part.Id)));
-            contentBuilder.CloseComponent();
+    private void HideContextMenu()
+    {
+        showContextMenu = false;
+        contextMenuPart = null;
+    }
 
-            contentBuilder.CloseElement(); // div
-
-            contentBuilder.CloseElement(); // d-flex
-        }));
-        builder.CloseComponent(); // MudPaper
-
-        // Render children with indentation
-        if (part.Children?.Any() == true)
+    private void OpenAddChildDialog(TemplatePartDto parentPart)
+    {
+        HideContextMenu();
+        if (selectedTemplate != null)
         {
-            builder.OpenElement(26, "div");
-            builder.AddAttribute(27, "style", "margin-left: 20px; border-left: 2px solid var(--mud-palette-divider); padding-left: 8px;");
-            
-            foreach (var child in part.Children.OrderBy(c => c.Position))
+            editingPart = new TemplatePartDto
             {
-                builder.AddContent(28, RenderPart(child));
-            }
-            
-            builder.CloseElement(); // div
+                ProductTemplateId = selectedTemplate.Id,
+                ParentPartId = parentPart.Id,
+                Quantity = 1,
+                Position = (parentPart.Children?.Count ?? 0) + 1
+            };
+            showPartDialog = true;
         }
+    }
 
-        builder.CloseElement(); // div
-    };
+    private async Task MovePartUp(TemplatePartDto part)
+    {
+        HideContextMenu();
+        try
+        {
+            // Get siblings list
+            var siblings = part.ParentPartId.HasValue
+                ? FindPartById(selectedTemplate!.RootParts, part.ParentPartId.Value)?.Children
+                : selectedTemplate?.RootParts;
+
+            if (siblings == null) return;
+
+            var orderedSiblings = siblings.OrderBy(p => p.Position).ToList();
+            var currentIndex = orderedSiblings.FindIndex(p => p.Id == part.Id);
+
+            if (currentIndex > 0)
+            {
+                // Swap positions
+                var temp = orderedSiblings[currentIndex - 1].Position;
+                orderedSiblings[currentIndex - 1].Position = part.Position;
+                part.Position = temp;
+
+                // Update both parts
+                await TemplateService.UpdatePartAsync(orderedSiblings[currentIndex - 1]);
+                await TemplateService.UpdatePartAsync(part);
+
+                selectedTemplate = await TemplateService.GetTemplateByIdAsync(selectedTemplate!.Id);
+                StateHasChanged();
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error moving part: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private async Task MovePartDown(TemplatePartDto part)
+    {
+        HideContextMenu();
+        try
+        {
+            // Get siblings list
+            var siblings = part.ParentPartId.HasValue
+                ? FindPartById(selectedTemplate!.RootParts, part.ParentPartId.Value)?.Children
+                : selectedTemplate?.RootParts;
+
+            if (siblings == null) return;
+
+            var orderedSiblings = siblings.OrderBy(p => p.Position).ToList();
+            var currentIndex = orderedSiblings.FindIndex(p => p.Id == part.Id);
+
+            if (currentIndex < orderedSiblings.Count - 1)
+            {
+                // Swap positions
+                var temp = orderedSiblings[currentIndex + 1].Position;
+                orderedSiblings[currentIndex + 1].Position = part.Position;
+                part.Position = temp;
+
+                // Update both parts
+                await TemplateService.UpdatePartAsync(orderedSiblings[currentIndex + 1]);
+                await TemplateService.UpdatePartAsync(part);
+
+                selectedTemplate = await TemplateService.GetTemplateByIdAsync(selectedTemplate!.Id);
+                StateHasChanged();
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error moving part: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private TemplatePartDto? FindPartById(List<TemplatePartDto> parts, int id)
+    {
+        foreach (var part in parts)
+        {
+            if (part.Id == id) return part;
+            if (part.Children?.Any() == true)
+            {
+                var found = FindPartById(part.Children, id);
+                if (found != null) return found;
+            }
+        }
+        return null;
+    }
 }
