@@ -4,6 +4,7 @@
 @using TinacoPro.Application.DTOs
 @inject ProductionOrderService OrderService
 @inject ProductService ProductService
+@inject ISnackbar Snackbar
 
 <PageTitle>Daily Production Entry - TinacoPro</PageTitle>
 
@@ -14,36 +15,36 @@
     
     <MudDatePicker @bind-Date="productionDate" Label="Production Date" Variant="Variant.Outlined" Class="mb-4" Required="true" />
     
-    <MudText Typo="Typo.subtitle1" Class="mb-3"><strong>Enter quantities for each product:</strong></MudText>
-    
-    <MudGrid>
-        <MudItem xs="12" sm="6" md="4">
-            <MudNumericField @bind-Value="quantity450L" Label="450L Tinaco" Variant="Variant.Outlined" Min="0" Adornment="Adornment.End" AdornmentText="units" />
-        </MudItem>
-        <MudItem xs="12" sm="6" md="4">
-            <MudNumericField @bind-Value="quantity750L" Label="750L Tinaco" Variant="Variant.Outlined" Min="0" Adornment="Adornment.End" AdornmentText="units" />
-        </MudItem>
-        <MudItem xs="12" sm="6" md="4">
-            <MudNumericField @bind-Value="quantity1100L" Label="1100L Tinaco" Variant="Variant.Outlined" Min="0" Adornment="Adornment.End" AdornmentText="units" />
-        </MudItem>
-        <MudItem xs="12" sm="6" md="4">
-            <MudNumericField @bind-Value="quantity2500L" Label="2500L Tinaco" Variant="Variant.Outlined" Min="0" Adornment="Adornment.End" AdornmentText="units" />
-        </MudItem>
-        <MudItem xs="12" sm="6" md="4">
-            <MudNumericField @bind-Value="quantity5000L" Label="5000L Tinaco" Variant="Variant.Outlined" Min="0" Adornment="Adornment.End" AdornmentText="units" />
-        </MudItem>
-    </MudGrid>
-    
-    <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Save" 
-               OnClick="SaveDailyProduction" Class="mt-4" Disabled="@(!productionDate.HasValue)">
-        Save Daily Production
-    </MudButton>
-    
-    @if (showSuccessMessage)
+    @if (products == null)
     {
-        <MudAlert Severity="Severity.Success" Class="mt-3" CloseIcon="@Icons.Material.Filled.Close" CloseIconClicked="@(() => showSuccessMessage = false)">
-            Production orders created successfully for @ordersCreated product(s)!
-        </MudAlert>
+        <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+    }
+    else if (products.Any())
+    {
+        <MudText Typo="Typo.subtitle1" Class="mb-3"><strong>Enter quantities for each product:</strong></MudText>
+        
+        <MudGrid>
+            @foreach (var product in products.Where(p => p.IsActive).OrderBy(p => p.Capacity))
+            {
+                <MudItem xs="12" sm="6" md="4">
+                    <MudNumericField @bind-Value="productQuantities[product.Id]" 
+                                     Label="@product.Name" 
+                                     Variant="Variant.Outlined" 
+                                     Min="0" 
+                                     Adornment="Adornment.End" 
+                                     AdornmentText="units" />
+                </MudItem>
+            }
+        </MudGrid>
+        
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Save" 
+                   OnClick="SaveDailyProduction" Class="mt-4" Disabled="@(!productionDate.HasValue)">
+            Save Daily Production
+        </MudButton>
+    }
+    else
+    {
+        <MudAlert Severity="Severity.Warning">No active products found. Please add products first.</MudAlert>
     }
 </MudPaper>
 
@@ -74,17 +75,7 @@ else if (historicalOrders.Any())
             <MudTd DataLabel="Product">@context.ProductName</MudTd>
             <MudTd DataLabel="Quantity">@context.Quantity</MudTd>
             <MudTd DataLabel="Status">
-                @{
-                    var chipColor = context.Status switch
-                    {
-                        "Pending" => Color.Warning,
-                        "InProgress" => Color.Info,
-                        "Completed" => Color.Success,
-                        "Cancelled" => Color.Error,
-                        _ => Color.Default
-                    };
-                }
-                <MudChip T="string" Color="@chipColor" Size="Size.Small">@context.Status</MudChip>
+                <MudChip T="string" Color="@GetStatusColor(context.Status)" Size="Size.Small">@context.Status</MudChip>
             </MudTd>
             <MudTd DataLabel="Order Number">@context.OrderNumber</MudTd>
         </RowTemplate>
@@ -97,17 +88,9 @@ else
 
 @code {
     private DateTime? productionDate = DateTime.Today;
-    private int quantity450L = 0;
-    private int quantity750L = 0;
-    private int quantity1100L = 0;
-    private int quantity2500L = 0;
-    private int quantity5000L = 0;
-    private bool showSuccessMessage = false;
-    private int ordersCreated = 0;
-    
     private IEnumerable<ProductionOrderDto>? historicalOrders;
     private IEnumerable<ProductDto>? products;
-    private Dictionary<string, int> productCapacityToId = new();
+    private Dictionary<int, int> productQuantities = new();
     
     private TableGroupDefinition<ProductionOrderDto> _groupDefinition = new()
     {
@@ -128,16 +111,12 @@ else
     {
         products = await ProductService.GetAllProductsAsync();
         
-        // Map product capacities to IDs for quick lookup
+        // Initialize quantities dictionary with all products
         if (products != null)
         {
-            foreach (var product in products)
+            foreach (var product in products.Where(p => p.IsActive))
             {
-                var capacity = ((int)product.Capacity).ToString();
-                if (!productCapacityToId.ContainsKey(capacity))
-                {
-                    productCapacityToId[capacity] = product.Id;
-                }
+                productQuantities[product.Id] = 0;
             }
         }
     }
@@ -153,25 +132,15 @@ else
         if (!productionDate.HasValue)
             return;
 
-        ordersCreated = 0;
-        showSuccessMessage = false;
+        int ordersCreated = 0;
 
-        var quantities = new Dictionary<string, int>
+        try
         {
-            { "450", quantity450L },
-            { "750", quantity750L },
-            { "1100", quantity1100L },
-            { "2500", quantity2500L },
-            { "5000", quantity5000L }
-        };
-
-        foreach (var kvp in quantities)
-        {
-            if (kvp.Value > 0 && productCapacityToId.TryGetValue(kvp.Key, out var productId))
+            foreach (var kvp in productQuantities.Where(q => q.Value > 0))
             {
                 var createDto = new CreateProductionOrderDto
                 {
-                    ProductId = productId,
+                    ProductId = kvp.Key,
                     Quantity = kvp.Value,
                     Notes = $"Daily production entry for {productionDate.Value:yyyy-MM-dd}"
                 };
@@ -179,22 +148,41 @@ else
                 await OrderService.CreateOrderAsync(createDto);
                 ordersCreated++;
             }
-        }
 
-        if (ordersCreated > 0)
-        {
-            showSuccessMessage = true;
-            
-            // Reset form
-            quantity450L = 0;
-            quantity750L = 0;
-            quantity1100L = 0;
-            quantity2500L = 0;
-            quantity5000L = 0;
-            productionDate = DateTime.Today;
-            
-            // Reload historical orders
-            await LoadHistoricalOrders();
+            if (ordersCreated > 0)
+            {
+                Snackbar.Add($"Production orders created successfully for {ordersCreated} product(s)!", Severity.Success);
+                
+                // Reset form
+                foreach (var key in productQuantities.Keys.ToList())
+                {
+                    productQuantities[key] = 0;
+                }
+                productionDate = DateTime.Today;
+                
+                // Reload historical orders
+                await LoadHistoricalOrders();
+            }
+            else
+            {
+                Snackbar.Add("Please enter quantities for at least one product.", Severity.Warning);
+            }
         }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error creating production orders: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private Color GetStatusColor(string status)
+    {
+        return status switch
+        {
+            "Pending" => Color.Warning,
+            "InProgress" => Color.Info,
+            "Completed" => Color.Success,
+            "Cancelled" => Color.Error,
+            _ => Color.Default
+        };
     }
 }

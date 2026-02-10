@@ -656,7 +656,7 @@
                 contentBuilder.AddAttribute(17, "Size", Size.Small);
                 contentBuilder.AddAttribute(18, "Color", Color.Primary);
                 contentBuilder.AddAttribute(19, "Title", "Add Child Part");
-                contentBuilder.AddAttribute(20, "OnClick", EventCallback.Factory.Create(this, () => OpenAddChildDialog(part)));
+                contentBuilder.AddAttribute(20, "OnClick", EventCallback.Factory.Create<MouseEventArgs>(this, (e) => OpenAddChildDialog(part)));
                 contentBuilder.CloseComponent();
 
                 contentBuilder.OpenComponent<MudIconButton>(21);
@@ -664,7 +664,7 @@
                 contentBuilder.AddAttribute(23, "Size", Size.Small);
                 contentBuilder.AddAttribute(24, "Color", Color.Info);
                 contentBuilder.AddAttribute(25, "Title", "Edit Part");
-                contentBuilder.AddAttribute(26, "OnClick", EventCallback.Factory.Create(this, () => OpenEditPartDialog(part)));
+                contentBuilder.AddAttribute(26, "OnClick", EventCallback.Factory.Create<MouseEventArgs>(this, (e) => OpenEditPartDialog(part)));
                 contentBuilder.CloseComponent();
 
                 contentBuilder.OpenComponent<MudIconButton>(27);
@@ -672,7 +672,7 @@
                 contentBuilder.AddAttribute(29, "Size", Size.Small);
                 contentBuilder.AddAttribute(30, "Color", Color.Error);
                 contentBuilder.AddAttribute(31, "Title", "Delete Part");
-                contentBuilder.AddAttribute(32, "OnClick", EventCallback.Factory.Create(this, () => DeletePart(part.Id)));
+                contentBuilder.AddAttribute(32, "OnClick", EventCallback.Factory.Create<MouseEventArgs>(this, (e) => DeletePart(part.Id)));
                 contentBuilder.CloseComponent();
 
                 // Move up/down buttons for sibling reordering
@@ -682,14 +682,14 @@
                     contentBuilder.AddAttribute(34, "Icon", Icons.Material.Filled.ArrowUpward);
                     contentBuilder.AddAttribute(35, "Size", Size.Small);
                     contentBuilder.AddAttribute(36, "Title", "Move Up");
-                    contentBuilder.AddAttribute(37, "OnClick", EventCallback.Factory.Create(this, () => MovePartUp(part)));
+                    contentBuilder.AddAttribute(37, "OnClick", EventCallback.Factory.Create<MouseEventArgs>(this, (e) => MovePartUp(part)));
                     contentBuilder.CloseComponent();
 
                     contentBuilder.OpenComponent<MudIconButton>(38);
                     contentBuilder.AddAttribute(39, "Icon", Icons.Material.Filled.ArrowDownward);
                     contentBuilder.AddAttribute(40, "Size", Size.Small);
                     contentBuilder.AddAttribute(41, "Title", "Move Down");
-                    contentBuilder.AddAttribute(42, "OnClick", EventCallback.Factory.Create(this, () => MovePartDown(part)));
+                    contentBuilder.AddAttribute(42, "OnClick", EventCallback.Factory.Create<MouseEventArgs>(this, (e) => MovePartDown(part)));
                     contentBuilder.CloseComponent();
                 }
 
