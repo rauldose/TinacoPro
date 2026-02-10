@@ -186,6 +186,20 @@ else
 
     private async Task LoadData()
     {
+        // Auto-dispatch pending shipments whose shipment date has arrived
+        var autoDispatched = await ShipmentService.AutoDispatchPendingShipmentsAsync();
+        // Auto-deliver InTransit shipments whose expected delivery date has passed
+        var autoDelivered = await ShipmentService.AutoDeliverShipmentsAsync();
+        
+        if (autoDispatched > 0)
+        {
+            Snackbar.Add(string.Format(Localization.Translate("ShipmentsAutoDispatched"), autoDispatched), Severity.Info);
+        }
+        if (autoDelivered > 0)
+        {
+            Snackbar.Add(string.Format(Localization.Translate("ShipmentsAutoDelivered"), autoDelivered), Severity.Info);
+        }
+
         shipments = await ShipmentService.GetAllShipmentsAsync();
         products = await ProductService.GetAllProductsAsync();
         finishedGoods = await FinishedGoodsService.GetAllAsync();

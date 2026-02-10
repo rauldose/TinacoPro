@@ -270,6 +270,11 @@ public class LocalizationService
                 ["ProductionOrdersCreatedSuccess"] = "Production orders created successfully for {0} product(s)!",
                 ["EnterQuantityWarning"] = "Please enter quantities for at least one product.",
                 ["ErrorCreatingOrders"] = "Error creating production orders: {0}",
+                // Additional automation messages
+                ["ExistingOrdersAutoStarted"] = "{0} existing pending order(s) automatically started",
+                ["ShipmentsAutoDispatched"] = "{0} shipment(s) auto-dispatched (shipment date reached)",
+                ["ShipmentsAutoDelivered"] = "{0} shipment(s) auto-delivered (expected delivery date reached)",
+                ["LowStockAlert"] = "Low Stock Alert",
             },
             ["es"] = new Dictionary<string, string>
             {
@@ -519,6 +524,11 @@ public class LocalizationService
                 ["ProductionOrdersCreatedSuccess"] = "¡Órdenes de producción creadas exitosamente para {0} producto(s)!",
                 ["EnterQuantityWarning"] = "Por favor, ingrese cantidades para al menos un producto.",
                 ["ErrorCreatingOrders"] = "Error al crear órdenes de producción: {0}",
+                // Additional automation messages
+                ["ExistingOrdersAutoStarted"] = "{0} orden(es) pendiente(s) iniciada(s) automáticamente",
+                ["ShipmentsAutoDispatched"] = "{0} envío(s) despachado(s) automáticamente (fecha de envío alcanzada)",
+                ["ShipmentsAutoDelivered"] = "{0} envío(s) entregado(s) automáticamente (fecha de entrega esperada alcanzada)",
+                ["LowStockAlert"] = "Alerta de Stock Bajo",
             }
         };
     }

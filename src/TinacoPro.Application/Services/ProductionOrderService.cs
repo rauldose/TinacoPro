@@ -116,9 +116,11 @@ public class ProductionOrderService
     /// <summary>
     /// Creates a production order from daily production entry with automation:
     /// - Automatically sets the order to InProgress
+    /// - Auto-starts any existing Pending orders for the same product
     /// - Checks existing InProgress orders for the same product to auto-complete if daily production meets target
+    /// Returns the created order, whether any orders were auto-completed, list of auto-started order IDs, and low-stock material warnings
     /// </summary>
-    public async Task<(ProductionOrderDto Order, bool AutoCompleted)> CreateDailyProductionOrderAsync(CreateProductionOrderDto dto)
+    public async Task<(ProductionOrderDto Order, bool AutoCompleted, List<string> AutoStartedOrders, List<string> LowStockWarnings)> CreateDailyProductionOrderAsync(CreateProductionOrderDto dto)
     {
         // First create the order normally
         var orderDto = await CreateOrderAsync(dto);
@@ -127,11 +129,26 @@ public class ProductionOrderService
         await StartOrderAsync(orderDto.Id);
         orderDto.Status = "InProgress";
 
+        // Auto-start any existing Pending orders for the same product
+        var autoStartedOrders = new List<string>();
+        var allOrders = await _orderRepository.GetAllAsync();
+        var pendingOrders = allOrders
+            .Where(o => o.ProductId == dto.ProductId && o.Status == OrderStatus.Pending && o.Id != orderDto.Id)
+            .OrderBy(o => o.OrderDate)
+            .ToList();
+
+        foreach (var pendingOrder in pendingOrders)
+        {
+            await StartOrderAsync(pendingOrder.Id);
+            autoStartedOrders.Add(pendingOrder.OrderNumber);
+        }
+
         // Check existing InProgress orders for this product to see if any should be auto-completed
         // An existing order is auto-completed when the daily production quantity (dto.Quantity) meets
         // or exceeds that order's target quantity
         bool autoCompleted = false;
-        var allOrders = await _orderRepository.GetAllAsync();
+        // Re-fetch orders since we may have changed some statuses
+        allOrders = await _orderRepository.GetAllAsync();
         var inProgressOrders = allOrders
             .Where(o => o.ProductId == dto.ProductId && o.Status == OrderStatus.InProgress && o.Id != orderDto.Id)
             .OrderBy(o => o.OrderDate)
@@ -154,9 +171,26 @@ public class ProductionOrderService
             }
         }
         
+        // Check for low-stock materials after depletion
+        var lowStockWarnings = await GetLowStockWarningsAsync();
+
         // Refresh the order DTO to get updated status
         var refreshedOrder = await GetOrderByIdAsync(orderDto.Id);
-        return (refreshedOrder ?? orderDto, autoCompleted);
+        return (refreshedOrder ?? orderDto, autoCompleted, autoStartedOrders, lowStockWarnings);
+    }
+
+    /// <summary>
+    /// Returns warnings for materials that are at or below minimum stock levels.
+    /// </summary>
+    private async Task<List<string>> GetLowStockWarningsAsync()
+    {
+        var warnings = new List<string>();
+        var materials = await _materialRepository.GetAllAsync();
+        foreach (var material in materials.Where(m => m.IsActive && m.CurrentStock <= m.MinimumStock))
+        {
+            warnings.Add($"{material.Name}: {material.CurrentStock:F1} {material.Unit} ({material.MinimumStock:F1} {material.Unit} min)");
+        }
+        return warnings;
     }
 
     public async Task StartOrderAsync(int orderId)

@@ -165,6 +165,51 @@ public class ShipmentService
         await _shipmentRepository.UpdateAsync(shipment);
     }
 
+    /// <summary>
+    /// Auto-dispatches pending shipments whose shipment date has arrived or passed.
+    /// Returns the count of shipments that were auto-transitioned to InTransit.
+    /// </summary>
+    public async Task<int> AutoDispatchPendingShipmentsAsync()
+    {
+        var shipments = await _shipmentRepository.GetAllAsync();
+        var pendingReady = shipments
+            .Where(s => s.Status == ShipmentStatus.Pending && s.ShipmentDate.Date <= DateTime.UtcNow.Date)
+            .ToList();
+
+        foreach (var shipment in pendingReady)
+        {
+            shipment.Status = ShipmentStatus.InTransit;
+            shipment.UpdatedAt = DateTime.UtcNow;
+            await _shipmentRepository.UpdateAsync(shipment);
+        }
+
+        return pendingReady.Count;
+    }
+
+    /// <summary>
+    /// Auto-marks InTransit shipments as Delivered when their expected delivery date has passed.
+    /// Returns the count of shipments that were auto-delivered.
+    /// </summary>
+    public async Task<int> AutoDeliverShipmentsAsync()
+    {
+        var shipments = await _shipmentRepository.GetAllAsync();
+        var inTransitReady = shipments
+            .Where(s => s.Status == ShipmentStatus.InTransit 
+                && s.ExpectedDeliveryDate.HasValue 
+                && s.ExpectedDeliveryDate.Value.Date <= DateTime.UtcNow.Date)
+            .ToList();
+
+        foreach (var shipment in inTransitReady)
+        {
+            shipment.Status = ShipmentStatus.Delivered;
+            shipment.ActualDeliveryDate = DateTime.UtcNow;
+            shipment.UpdatedAt = DateTime.UtcNow;
+            await _shipmentRepository.UpdateAsync(shipment);
+        }
+
+        return inTransitReady.Count;
+    }
+
     private async Task<string> GenerateShipmentNumberAsync()
     {
         var allShipments = await _shipmentRepository.GetAllAsync();

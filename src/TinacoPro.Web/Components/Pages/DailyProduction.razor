@@ -181,6 +181,8 @@ else
 
         int ordersCreated = 0;
         int ordersAutoCompleted = 0;
+        var allAutoStarted = new List<string>();
+        var allLowStockWarnings = new List<string>();
 
         try
         {
@@ -196,10 +198,16 @@ else
                         : productionNotes
                 };
                 
-                var (order, autoCompleted) = await OrderService.CreateDailyProductionOrderAsync(createDto);
+                var (order, autoCompleted, autoStartedOrders, lowStockWarnings) = await OrderService.CreateDailyProductionOrderAsync(createDto);
                 ordersCreated++;
                 if (autoCompleted)
                     ordersAutoCompleted++;
+                allAutoStarted.AddRange(autoStartedOrders);
+                foreach (var warning in lowStockWarnings)
+                {
+                    if (!allLowStockWarnings.Contains(warning))
+                        allLowStockWarnings.Add(warning);
+                }
             }
 
             if (ordersCreated > 0)
@@ -207,9 +215,19 @@ else
                 Snackbar.Add(string.Format(Localization.Translate("ProductionOrdersCreatedSuccess"), ordersCreated), Severity.Success);
                 Snackbar.Add(Localization.Translate("OrderAutoStarted"), Severity.Info);
                 
+                if (allAutoStarted.Count > 0)
+                {
+                    Snackbar.Add(string.Format(Localization.Translate("ExistingOrdersAutoStarted"), allAutoStarted.Count), Severity.Info);
+                }
+                
                 if (ordersAutoCompleted > 0)
                 {
                     Snackbar.Add(Localization.Translate("OrderAutoCompleted"), Severity.Success);
+                }
+                
+                foreach (var warning in allLowStockWarnings)
+                {
+                    Snackbar.Add($"{Localization.Translate("LowStockAlert")}: {warning}", Severity.Warning);
                 }
                 
                 // Reset form
