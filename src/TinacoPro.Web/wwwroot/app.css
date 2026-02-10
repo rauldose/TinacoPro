@@ -78,6 +78,48 @@ body.mud-theme-light {
     background-color: #f5f5f5;
 }
 
+.mud-theme-light .mud-paper,
+.mud-theme-light .mud-card {
+    background-color: #ffffff;
+    color: #212121;
+}
+
+.mud-theme-light .mud-table {
+    background-color: #ffffff;
+}
+
+.mud-theme-light .mud-table-cell {
+    color: #212121;
+}
+
+.mud-theme-light .mud-typography {
+    color: #212121;
+}
+
+.mud-theme-light h1,
+.mud-theme-light h2,
+.mud-theme-light h3,
+.mud-theme-light h4,
+.mud-theme-light h5,
+.mud-theme-light h6 {
+    color: #212121;
+}
+
+.mud-theme-light .mud-text-secondary {
+    color: #666666 !important;
+}
+
+.mud-theme-light label,
+.mud-theme-light .mud-input-label {
+    color: #424242 !important;
+}
+
+.mud-theme-light .mud-dialog-container,
+.mud-theme-light .mud-dialog {
+    background-color: #ffffff;
+    color: #212121;
+}
+
 /* Ensure theme-agnostic containers are transparent */
 .mud-container,
 .mud-container-maxwidth-false,
