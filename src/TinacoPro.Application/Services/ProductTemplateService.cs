@@ -167,7 +167,9 @@ public class ProductTemplateService
 
     private (decimal materialCost, decimal laborCost, int minutes) CalculatePartCostsRecursive(TemplatePart part)
     {
-        decimal materialCost = part.PartType == "Material" ? part.UnitCost * part.Quantity : 0;
+        // Calculate material cost: for Material parts, use UnitCost * Quantity
+        // For other parts (Assembly, Component, Process), use UnitCost * Quantity if they have a cost
+        decimal materialCost = (part.UnitCost * part.Quantity);
         decimal laborCost = part.LaborCost;
         int minutes = part.EstimatedMinutes;
 

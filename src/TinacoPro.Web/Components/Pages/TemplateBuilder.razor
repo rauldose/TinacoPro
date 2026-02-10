@@ -613,9 +613,10 @@
             builder.OpenComponent<MudTreeViewItem<TreeItemData>>(0);
             builder.AddAttribute(1, "Value", treeItemData);
             builder.AddAttribute(2, "Icon", icon);
-            builder.AddAttribute(3, "CanExpand", part.Children?.Any() == true);
-            builder.AddAttribute(4, "Expanded", true);
-            builder.AddAttribute(5, "ChildContent", (RenderFragment)(contentBuilder =>
+            builder.AddAttribute(3, "Text", part.Name);
+            builder.AddAttribute(4, "CanExpand", part.Children?.Any() == true);
+            builder.AddAttribute(5, "Expanded", true);
+            builder.AddAttribute(6, "ChildContent", (RenderFragment)(contentBuilder =>
             {
                 // Item content
                 contentBuilder.OpenElement(0, "div");
