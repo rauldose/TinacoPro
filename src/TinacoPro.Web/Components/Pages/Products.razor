@@ -9,13 +9,13 @@
 @inject ISnackbar Snackbar
 @implements IDisposable
 
-<PageTitle>Products - TinacoPro</PageTitle>
+<PageTitle>@Localization.Translate("ProductCatalog") - TinacoPro</PageTitle>
 
-<MudText Typo="Typo.h4" Class="mb-4">Product Catalog</MudText>
+<MudText Typo="Typo.h4" Class="mb-4">@Localization.Translate("ProductCatalog")</MudText>
 
 <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" 
            OnClick="ShowCreateForm" Class="mb-4">
-    New Product
+    @Localization.Translate("NewProduct")
 </MudButton>
 
 @if (products == null)
@@ -26,15 +26,15 @@ else if (products.Any())
 {
     <MudTable Items="@products" Hover="true" Striped="true" Dense="true" Elevation="2">
         <HeaderContent>
-            <MudTh>Name</MudTh>
-            <MudTh>Model</MudTh>
-            <MudTh>Capacity (L)</MudTh>
-            <MudTh>Template</MudTh>
-            <MudTh>Material Cost</MudTh>
-            <MudTh>Labor Cost</MudTh>
-            <MudTh>Total Cost</MudTh>
-            <MudTh>Status</MudTh>
-            <MudTh>Actions</MudTh>
+            <MudTh>@Localization.Translate("Name")</MudTh>
+            <MudTh>@Localization.Translate("Model")</MudTh>
+            <MudTh>@Localization.Translate("Capacity")</MudTh>
+            <MudTh>@Localization.Translate("Template")</MudTh>
+            <MudTh>@Localization.Translate("MaterialCost")</MudTh>
+            <MudTh>@Localization.Translate("LaborCost")</MudTh>
+            <MudTh>@Localization.Translate("TotalCost")</MudTh>
+            <MudTh>@Localization.Translate("Status")</MudTh>
+            <MudTh>@Localization.Translate("Actions")</MudTh>
         </HeaderContent>
         <RowTemplate>
             <MudTd DataLabel="Name">@context.Name</MudTd>
@@ -49,7 +49,7 @@ else if (products.Any())
                 }
                 else
                 {
-                    <MudText Typo="Typo.caption" Color="Color.Secondary">No template</MudText>
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">@Localization.Translate("NoTemplate")</MudText>
                 }
             </MudTd>
             <MudTd DataLabel="Material Cost">$@context.MaterialCost.ToString("F2")</MudTd>
@@ -59,10 +59,10 @@ else if (products.Any())
             </MudTd>
             <MudTd DataLabel="Status">
                 <MudChip T="string" Color="@(context.IsActive ? Color.Success : Color.Default)" Size="Size.Small">
-                    @(context.IsActive ? "Active" : "Inactive")
+                    @(context.IsActive ? Localization.Translate("Active") : Localization.Translate("Inactive"))
                 </MudChip>
             </MudTd>
-            <MudTd DataLabel="Actions">
+            <MudTd DataLabel="@Localization.Translate("Actions")">
                 <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Color="Color.Info"
                                OnClick="@(() => ShowEditForm(context))" />
             </MudTd>
@@ -71,34 +71,34 @@ else if (products.Any())
 }
 else
 {
-    <MudAlert Severity="Severity.Info">No products found. Create your first product!</MudAlert>
+    <MudAlert Severity="Severity.Info">@Localization.Translate("NoProductsFound")</MudAlert>
 }
 
 <MudDialog @bind-Visible="showForm" Options="@(new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true })">
     <TitleContent>
         <MudText Typo="Typo.h6">
-            @(editingProduct == null ? "New Product" : "Edit Product")
+            @(editingProduct == null ? Localization.Translate("NewProduct") : Localization.Translate("EditProduct"))
         </MudText>
     </TitleContent>
     <DialogContent>
         <MudGrid>
             <MudItem xs="12" md="6">
-                <MudTextField @bind-Value="formModel.Name" Label="Name" Variant="Variant.Outlined" Required="true" />
+                <MudTextField @bind-Value="formModel.Name" Label="@Localization.Translate("Name")" Variant="Variant.Outlined" Required="true" />
             </MudItem>
             <MudItem xs="12" md="6">
-                <MudTextField @bind-Value="formModel.Model" Label="Model" Variant="Variant.Outlined" Required="true" />
+                <MudTextField @bind-Value="formModel.Model" Label="@Localization.Translate("Model")" Variant="Variant.Outlined" Required="true" />
             </MudItem>
             <MudItem xs="12" md="6">
-                <MudTextField @bind-Value="formModel.Size" Label="Size" Variant="Variant.Outlined" />
+                <MudTextField @bind-Value="formModel.Size" Label="@Localization.Translate("Size")" Variant="Variant.Outlined" />
             </MudItem>
             <MudItem xs="12" md="6">
-                <MudNumericField @bind-Value="formModel.Capacity" Label="Capacity (Liters)" Variant="Variant.Outlined" Min="0" />
+                <MudNumericField @bind-Value="formModel.Capacity" Label="@Localization.Translate("CapacityLiters")" Variant="Variant.Outlined" Min="0" />
             </MudItem>
             <MudItem xs="12">
-                <MudSelect @bind-Value="formModel.TemplateId" Label="Production Template (Optional)" 
+                <MudSelect @bind-Value="formModel.TemplateId" Label="@Localization.Translate("ProductionTemplateOptional")" 
                            Variant="Variant.Outlined" T="int?" Clearable="true"
-                           HelperText="Select a template to define BOM and costs">
-                    <MudSelectItem T="int?" Value="null">No Template</MudSelectItem>
+                           HelperText="@Localization.Translate("SelectTemplateHelp")">
+                    <MudSelectItem T="int?" Value="null">@Localization.Translate("NoTemplateSelected")</MudSelectItem>
                     @if (templates != null)
                     {
                         @foreach (var template in templates.Where(t => t.IsActive))
@@ -111,7 +111,7 @@ else
                 </MudSelect>
             </MudItem>
             <MudItem xs="12">
-                <MudTextField @bind-Value="formModel.Description" Label="Description" Variant="Variant.Outlined" Lines="3" />
+                <MudTextField @bind-Value="formModel.Description" Label="@Localization.Translate("Description")" Variant="Variant.Outlined" Lines="3" />
             </MudItem>
             <MudItem xs="12">
                 <MudSwitch T="bool" @bind-Value="formModel.IsActive" Label="@Localization.Translate("Active")" Color="Color.Success" />
@@ -124,10 +124,10 @@ else
                 {
                     <MudItem xs="12">
                         <MudAlert Severity="Severity.Info" Dense="true">
-                            <MudText Typo="Typo.caption"><strong>Template Costs:</strong></MudText>
-                            <MudText Typo="Typo.caption">Material Cost: $@selectedTemplate.TotalMaterialCost.ToString("F2")</MudText>
-                            <MudText Typo="Typo.caption">Labor Cost: $@selectedTemplate.TotalLaborCost.ToString("F2")</MudText>
-                            <MudText Typo="Typo.caption"><strong>Total: $@((selectedTemplate.TotalMaterialCost + selectedTemplate.TotalLaborCost).ToString("F2"))</strong></MudText>
+                            <MudText Typo="Typo.caption"><strong>@Localization.Translate("TemplateCosts"):</strong></MudText>
+                            <MudText Typo="Typo.caption">@Localization.Translate("MaterialCost"): $@selectedTemplate.TotalMaterialCost.ToString("F2")</MudText>
+                            <MudText Typo="Typo.caption">@Localization.Translate("LaborCost"): $@selectedTemplate.TotalLaborCost.ToString("F2")</MudText>
+                            <MudText Typo="Typo.caption"><strong>@Localization.Translate("Total"): $@((selectedTemplate.TotalMaterialCost + selectedTemplate.TotalLaborCost).ToString("F2"))</strong></MudText>
                         </MudAlert>
                     </MudItem>
                 }
@@ -135,8 +135,8 @@ else
         </MudGrid>
     </DialogContent>
     <DialogActions>
-        <MudButton OnClick="HideForm" Variant="Variant.Text">Cancel</MudButton>
-        <MudButton OnClick="SaveProduct" Variant="Variant.Filled" Color="Color.Primary">Save</MudButton>
+        <MudButton OnClick="HideForm" Variant="Variant.Text">@Localization.Translate("Cancel")</MudButton>
+        <MudButton OnClick="SaveProduct" Variant="Variant.Filled" Color="Color.Primary">@Localization.Translate("Save")</MudButton>
     </DialogActions>
 </MudDialog>
 
@@ -219,7 +219,7 @@ else
                     TemplateId = formModel.TemplateId
                 };
                 await ProductService.CreateProductAsync(createDto);
-                Snackbar.Add("Product created successfully!", Severity.Success);
+                Snackbar.Add(Localization.Translate("ProductCreated"), Severity.Success);
             }
             else
             {
@@ -231,7 +231,7 @@ else
                 editingProduct.IsActive = formModel.IsActive;
                 editingProduct.TemplateId = formModel.TemplateId;
                 await ProductService.UpdateProductAsync(editingProduct);
-                Snackbar.Add("Product updated successfully!", Severity.Success);
+                Snackbar.Add(Localization.Translate("ProductUpdated"), Severity.Success);
             }
             
             HideForm();

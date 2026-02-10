@@ -10,13 +10,13 @@
 @inject LocalizationService Localization
 @implements IDisposable
 
-<PageTitle>Finished Goods - TinacoPro</PageTitle>
+<PageTitle>@Localization.Translate("FinishedGoodsInventory") - TinacoPro</PageTitle>
 
-<MudText Typo="Typo.h4" Class="mb-4">Finished Goods Inventory</MudText>
+<MudText Typo="Typo.h4" Class="mb-4">@Localization.Translate("FinishedGoodsInventory")</MudText>
 
 <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" 
            OnClick="ShowCreateForm" Class="mb-4">
-    New Finished Good Entry
+    @Localization.Translate("NewFinishedGoodEntry")
 </MudButton>
 
 @if (finishedGoods == null)
@@ -27,13 +27,13 @@ else if (finishedGoods.Any())
 {
     <MudTable Items="@finishedGoods" Hover="true" Striped="true" Dense="true" Elevation="2">
         <HeaderContent>
-            <MudTh>Product</MudTh>
-            <MudTh>Batch Number</MudTh>
-            <MudTh>Order</MudTh>
-            <MudTh>Quantity Produced</MudTh>
-            <MudTh>Current Stock</MudTh>
-            <MudTh>Production Date</MudTh>
-            <MudTh>Actions</MudTh>
+            <MudTh>@Localization.Translate("Product")</MudTh>
+            <MudTh>@Localization.Translate("BatchNumber")</MudTh>
+            <MudTh>@Localization.Translate("Order")</MudTh>
+            <MudTh>@Localization.Translate("QuantityProduced")</MudTh>
+            <MudTh>@Localization.Translate("CurrentStock")</MudTh>
+            <MudTh>@Localization.Translate("ProductionDate")</MudTh>
+            <MudTh>@Localization.Translate("Actions")</MudTh>
         </HeaderContent>
         <RowTemplate>
             <MudTd DataLabel="Product">@context.ProductName</MudTd>
@@ -57,7 +57,7 @@ else if (finishedGoods.Any())
 }
 else
 {
-    <MudAlert Severity="Severity.Info">No finished goods found. Complete a production order to create finished goods!</MudAlert>
+    <MudAlert Severity="Severity.Info">@Localization.Translate("NoFinishedGoodsFound")</MudAlert>
 }
 
 <MudDialog @bind-Visible="showForm">
