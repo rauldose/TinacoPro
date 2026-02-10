@@ -7,6 +7,7 @@
 @inject ProductTemplateService TemplateService
 @inject LocalizationService Localization
 @inject ISnackbar Snackbar
+@implements IDisposable
 
 <PageTitle>Products - TinacoPro</PageTitle>
 
@@ -113,7 +114,7 @@ else
                 <MudTextField @bind-Value="formModel.Description" Label="Description" Variant="Variant.Outlined" Lines="3" />
             </MudItem>
             <MudItem xs="12">
-                <MudSwitch T="bool" @bind-Checked="formModel.IsActive" Label="@Localization.Translate("Active")" Color="Color.Success" />
+                <MudSwitch T="bool" @bind-Value="formModel.IsActive" Label="@Localization.Translate("Active")" Color="Color.Success" />
             </MudItem>
             
             @if (formModel.TemplateId.HasValue && templates != null)
@@ -148,8 +149,19 @@ else
 
     protected override async Task OnInitializedAsync()
     {
+        Localization.OnLanguageChanged += HandleLanguageChanged;
         await LoadProducts();
         await LoadTemplates();
+    }
+
+    private async void HandleLanguageChanged()
+    {
+        await InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        Localization.OnLanguageChanged -= HandleLanguageChanged;
     }
 
     private async Task LoadProducts()

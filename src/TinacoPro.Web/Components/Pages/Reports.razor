@@ -57,13 +57,13 @@
                 <MudText Typo="Typo.h6" Class="mb-3">Report Options</MudText>
                 <MudGrid>
                     <MudItem xs="12" md="4">
-                        <MudCheckBox T="bool" @bind-Checked="includeCharts" Label="Include Charts" Color="Color.Primary" />
+                        <MudCheckBox T="bool" @bind-Value="includeCharts" Label="Include Charts" Color="Color.Primary" />
                     </MudItem>
                     <MudItem xs="12" md="4">
-                        <MudCheckBox T="bool" @bind-Checked="includeDetails" Label="Include Details" Color="Color.Primary" />
+                        <MudCheckBox T="bool" @bind-Value="includeDetails" Label="Include Details" Color="Color.Primary" />
                     </MudItem>
                     <MudItem xs="12" md="4">
-                        <MudCheckBox T="bool" @bind-Checked="groupByProduct" Label="Group by Product" Color="Color.Primary" />
+                        <MudCheckBox T="bool" @bind-Value="groupByProduct" Label="Group by Product" Color="Color.Primary" />
                     </MudItem>
                 </MudGrid>
             }

@@ -7,6 +7,7 @@
 @inject RawMaterialService MaterialService
 @inject ISnackbar Snackbar
 @inject LocalizationService Localization
+@implements IDisposable
 
 <MudContainer MaxWidth="MaxWidth.False" Class="pa-4">
     <MudText Typo="Typo.h4" Class="mb-4">Product Template Builder</MudText>
@@ -320,7 +321,18 @@
 
     protected override async Task OnInitializedAsync()
     {
+        Localization.OnLanguageChanged += HandleLanguageChanged;
         await LoadData();
+    }
+
+    private async void HandleLanguageChanged()
+    {
+        await InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        Localization.OnLanguageChanged -= HandleLanguageChanged;
     }
 
     private async Task LoadData()

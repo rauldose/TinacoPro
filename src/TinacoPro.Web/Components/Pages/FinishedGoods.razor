@@ -8,6 +8,7 @@
 @inject ProductionOrderService ProductionOrderService
 @inject IDialogService DialogService
 @inject LocalizationService Localization
+@implements IDisposable
 
 <PageTitle>Finished Goods - TinacoPro</PageTitle>
 
@@ -119,7 +120,18 @@ else
 
     protected override async Task OnInitializedAsync()
     {
+        Localization.OnLanguageChanged += HandleLanguageChanged;
         await LoadData();
+    }
+
+    private async void HandleLanguageChanged()
+    {
+        await InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        Localization.OnLanguageChanged -= HandleLanguageChanged;
     }
 
     private async Task LoadData()

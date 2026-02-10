@@ -548,8 +548,22 @@ h1:focus {
     outline: none;
 }
 
-h1, h2, h3, h4, h5, h6 {
+.mud-theme-dark h1,
+.mud-theme-dark h2,
+.mud-theme-dark h3,
+.mud-theme-dark h4,
+.mud-theme-dark h5,
+.mud-theme-dark h6 {
     color: var(--text-primary);
+}
+
+.mud-theme-light h1,
+.mud-theme-light h2,
+.mud-theme-light h3,
+.mud-theme-light h4,
+.mud-theme-light h5,
+.mud-theme-light h6 {
+    color: #212121;
 }
 
 .valid.modified:not([type=checkbox]) {

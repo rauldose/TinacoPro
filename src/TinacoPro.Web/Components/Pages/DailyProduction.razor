@@ -7,6 +7,7 @@
 @inject ProductService ProductService
 @inject ISnackbar Snackbar
 @inject LocalizationService Localization
+@implements IDisposable
 
 <PageTitle>@Localization.Translate("DailyProductionEntry") - TinacoPro</PageTitle>
 
@@ -138,8 +139,19 @@ else
 
     protected override async Task OnInitializedAsync()
     {
+        Localization.OnLanguageChanged += HandleLanguageChanged;
         await LoadProducts();
         await LoadHistoricalOrders();
+    }
+
+    private async void HandleLanguageChanged()
+    {
+        await InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        Localization.OnLanguageChanged -= HandleLanguageChanged;
     }
 
     private async Task LoadProducts()
@@ -233,48 +245,6 @@ else
             "Morning" => Color.Info,
             "Afternoon" => Color.Warning,
             "Night" => Color.Secondary,
-            _ => Color.Default
-        };
-    }
-}
-                
-                await OrderService.CreateOrderAsync(createDto);
-                ordersCreated++;
-            }
-
-            if (ordersCreated > 0)
-            {
-                Snackbar.Add($"Production orders created successfully for {ordersCreated} product(s)!", Severity.Success);
-                
-                // Reset form
-                foreach (var key in productQuantities.Keys.ToList())
-                {
-                    productQuantities[key] = 0;
-                }
-                productionDate = DateTime.Today;
-                
-                // Reload historical orders
-                await LoadHistoricalOrders();
-            }
-            else
-            {
-                Snackbar.Add("Please enter quantities for at least one product.", Severity.Warning);
-            }
-        }
-        catch (Exception ex)
-        {
-            Snackbar.Add($"Error creating production orders: {ex.Message}", Severity.Error);
-        }
-    }
-
-    private Color GetStatusColor(string status)
-    {
-        return status switch
-        {
-            "Pending" => Color.Warning,
-            "InProgress" => Color.Info,
-            "Completed" => Color.Success,
-            "Cancelled" => Color.Error,
             _ => Color.Default
         };
     }
