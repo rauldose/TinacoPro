@@ -160,6 +160,13 @@ public class ProductionOrderService
 
     private async Task CreateFinishedGoodsAsync(ProductionOrder order)
     {
+        // Get product to capture template and cost information
+        var product = await _productRepository.GetByIdAsync(order.ProductId);
+        if (product == null)
+        {
+            throw new InvalidOperationException($"Product with ID {order.ProductId} not found");
+        }
+
         // Generate batch number
         var batchNumber = $"BATCH-{DateTime.UtcNow:yyyyMMdd}-{order.OrderNumber}";
 
@@ -167,11 +174,14 @@ public class ProductionOrderService
         {
             ProductId = order.ProductId,
             ProductionOrderId = order.Id,
+            TemplateId = product.TemplateId, // Capture template at production time
             Quantity = order.Quantity,
             CurrentStock = order.Quantity,
             ProductionDate = DateTime.UtcNow,
             BatchNumber = batchNumber,
             Notes = $"Produced from order {order.OrderNumber}",
+            ActualMaterialCost = product.MaterialCost, // Capture actual costs at production time
+            ActualLaborCost = product.LaborCost,
             CreatedAt = DateTime.UtcNow
         };
 

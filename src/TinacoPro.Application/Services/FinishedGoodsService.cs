@@ -30,11 +30,15 @@ public class FinishedGoodsService
             ProductName = fg.Product?.Name ?? "Unknown",
             ProductionOrderId = fg.ProductionOrderId,
             OrderNumber = fg.ProductionOrder?.OrderNumber ?? "Unknown",
+            TemplateId = fg.TemplateId,
+            TemplateName = fg.Template?.Name,
             Quantity = fg.Quantity,
             CurrentStock = fg.CurrentStock,
             ProductionDate = fg.ProductionDate,
             BatchNumber = fg.BatchNumber,
-            Notes = fg.Notes
+            Notes = fg.Notes,
+            ActualMaterialCost = fg.ActualMaterialCost,
+            ActualLaborCost = fg.ActualLaborCost
         });
     }
 
@@ -50,11 +54,15 @@ public class FinishedGoodsService
             ProductName = finishedGood.Product?.Name ?? "Unknown",
             ProductionOrderId = finishedGood.ProductionOrderId,
             OrderNumber = finishedGood.ProductionOrder?.OrderNumber ?? "Unknown",
+            TemplateId = finishedGood.TemplateId,
+            TemplateName = finishedGood.Template?.Name,
             Quantity = finishedGood.Quantity,
             CurrentStock = finishedGood.CurrentStock,
             ProductionDate = finishedGood.ProductionDate,
             BatchNumber = finishedGood.BatchNumber,
-            Notes = finishedGood.Notes
+            Notes = finishedGood.Notes,
+            ActualMaterialCost = finishedGood.ActualMaterialCost,
+            ActualLaborCost = finishedGood.ActualLaborCost
         };
     }
 
@@ -68,11 +76,15 @@ public class FinishedGoodsService
             ProductName = fg.Product?.Name ?? "Unknown",
             ProductionOrderId = fg.ProductionOrderId,
             OrderNumber = fg.ProductionOrder?.OrderNumber ?? "Unknown",
+            TemplateId = fg.TemplateId,
+            TemplateName = fg.Template?.Name,
             Quantity = fg.Quantity,
             CurrentStock = fg.CurrentStock,
             ProductionDate = fg.ProductionDate,
             BatchNumber = fg.BatchNumber,
-            Notes = fg.Notes
+            Notes = fg.Notes,
+            ActualMaterialCost = fg.ActualMaterialCost,
+            ActualLaborCost = fg.ActualLaborCost
         });
     }
 
@@ -101,11 +113,15 @@ public class FinishedGoodsService
             ProductName = product?.Name ?? "Unknown",
             ProductionOrderId = created.ProductionOrderId,
             OrderNumber = order?.OrderNumber ?? "Unknown",
+            TemplateId = created.TemplateId,
+            TemplateName = created.Template?.Name,
             Quantity = created.Quantity,
             CurrentStock = created.CurrentStock,
             ProductionDate = created.ProductionDate,
             BatchNumber = created.BatchNumber,
-            Notes = created.Notes
+            Notes = created.Notes,
+            ActualMaterialCost = created.ActualMaterialCost,
+            ActualLaborCost = created.ActualLaborCost
         };
     }
 
