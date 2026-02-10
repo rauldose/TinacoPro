@@ -198,7 +198,7 @@ public class TinacoProDbContext : DbContext
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Name).IsRequired().HasMaxLength(200);
             entity.Property(e => e.ModelType).HasMaxLength(100);
-            entity.Property(e => e.Description).HasMaxLength(1000);
+            entity.Property(e => e.Description).IsRequired().HasMaxLength(1000).HasDefaultValue(string.Empty);
             entity.Property(e => e.TotalMaterialCost).HasPrecision(18, 2);
             entity.Property(e => e.TotalLaborCost).HasPrecision(18, 2);
         });

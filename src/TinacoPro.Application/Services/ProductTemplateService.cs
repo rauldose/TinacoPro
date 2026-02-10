@@ -34,7 +34,7 @@ public class ProductTemplateService
         var template = new ProductTemplate
         {
             Name = dto.Name,
-            Description = dto.Description,
+            Description = string.IsNullOrWhiteSpace(dto.Description) ? string.Empty : dto.Description,
             ModelType = dto.ModelType,
             IsActive = dto.IsActive
         };
@@ -49,7 +49,7 @@ public class ProductTemplateService
         if (template == null) return;
 
         template.Name = dto.Name;
-        template.Description = dto.Description;
+        template.Description = string.IsNullOrWhiteSpace(dto.Description) ? string.Empty : dto.Description;
         template.ModelType = dto.ModelType;
         template.IsActive = dto.IsActive;
 

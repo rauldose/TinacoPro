@@ -21,7 +21,11 @@ builder.Services.AddScoped<LocalizationService>();
 
 // Configure SQLite database
 builder.Services.AddDbContext<TinacoProDbContext>(options =>
-    options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
+{
+    options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection"));
+    // Use split query to avoid cartesian explosion warning when loading multiple collections
+    options.UseQueryTrackingBehavior(QueryTrackingBehavior.TrackAll);
+});
 
 // Register repositories
 builder.Services.AddScoped<IProductRepository, ProductRepository>();
