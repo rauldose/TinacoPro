@@ -180,7 +180,7 @@ public class ProductionOrderService
 
         // Calculate material requirements from template hierarchy
         var materialRequirements = new Dictionary<int, decimal>();
-        await CollectMaterialRequirementsAsync(template.Parts.Where(p => p.ParentPartId == null), materialRequirements);
+        CollectMaterialRequirements(template.Parts.Where(p => p.ParentPartId == null), materialRequirements);
 
         // Validate sufficient stock before depletion
         var insufficientMaterials = new List<string>();
@@ -229,7 +229,7 @@ public class ProductionOrderService
         }
     }
 
-    private async Task CollectMaterialRequirementsAsync(IEnumerable<TemplatePart> parts, Dictionary<int, decimal> requirements)
+    private void CollectMaterialRequirements(IEnumerable<TemplatePart> parts, Dictionary<int, decimal> requirements)
     {
         foreach (var part in parts)
         {
@@ -249,7 +249,7 @@ public class ProductionOrderService
             // Recursively process children
             if (part.Children != null && part.Children.Any())
             {
-                await CollectMaterialRequirementsAsync(part.Children, requirements);
+                CollectMaterialRequirements(part.Children, requirements);
             }
         }
     }
