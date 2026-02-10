@@ -176,6 +176,18 @@ public class LocalizationService
                 ["RootLevel"] = "Root Level",
                 ["Quantity"] = "Quantity",
                 ["ProductionDate"] = "Production Date",
+                ["DailyProductionEntry"] = "Daily Production Entry",
+                ["EnterProductionForDate"] = "Enter Production for Date",
+                ["EnterQuantitiesForEachProduct"] = "Enter quantities for each product",
+                ["Units"] = "units",
+                ["SaveDailyProduction"] = "Save Daily Production",
+                ["NoActiveProductsFound"] = "No active products found. Please add products first.",
+                ["HistoricalDailyProduction"] = "Historical Daily Production",
+                ["NoProductionHistoryFound"] = "No production history found. Start by entering your first daily production!",
+                ["ProductionOrdersManagement"] = "Production Orders Management",
+                ["MarkAsInProgress"] = "Mark as In Progress",
+                ["MarkAsCompleted"] = "Mark as Completed",
+                ["EditProductionOrder"] = "Edit Production Order",
             },
             ["es"] = new Dictionary<string, string>
             {
@@ -331,6 +343,18 @@ public class LocalizationService
                 ["RootLevel"] = "Nivel Raíz",
                 ["Quantity"] = "Cantidad",
                 ["ProductionDate"] = "Fecha de Producción",
+                ["DailyProductionEntry"] = "Entrada de Producción Diaria",
+                ["EnterProductionForDate"] = "Ingrese la Producción para la Fecha",
+                ["EnterQuantitiesForEachProduct"] = "Ingrese las cantidades para cada producto",
+                ["Units"] = "unidades",
+                ["SaveDailyProduction"] = "Guardar Producción Diaria",
+                ["NoActiveProductsFound"] = "No se encontraron productos activos. Por favor, agregue productos primero.",
+                ["HistoricalDailyProduction"] = "Historial de Producción Diaria",
+                ["NoProductionHistoryFound"] = "No se encontró historial de producción. ¡Comience ingresando su primera producción diaria!",
+                ["ProductionOrdersManagement"] = "Gestión de Órdenes de Producción",
+                ["MarkAsInProgress"] = "Marcar como En Progreso",
+                ["MarkAsCompleted"] = "Marcar como Completado",
+                ["EditProductionOrder"] = "Editar Orden de Producción",
             }
         };
     }

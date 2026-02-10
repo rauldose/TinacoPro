@@ -2,35 +2,37 @@
 @rendermode InteractiveServer
 @using TinacoPro.Application.Services
 @using TinacoPro.Application.DTOs
+@using TinacoPro.Web.Services
 @inject ProductionOrderService OrderService
 @inject ProductService ProductService
 @inject ISnackbar Snackbar
+@inject LocalizationService Localization
 
-<PageTitle>Daily Production Entry - TinacoPro</PageTitle>
+<PageTitle>@Localization.Translate("DailyProductionEntry") - TinacoPro</PageTitle>
 
-<MudText Typo="Typo.h4" Class="mb-4">Daily Production Entry</MudText>
+<MudText Typo="Typo.h4" Class="mb-4">@Localization.Translate("DailyProductionEntry")</MudText>
 
 <MudPaper Class="pa-4 mb-4" Elevation="2">
-    <MudText Typo="Typo.h6" Class="mb-3">Enter Production for Date</MudText>
+    <MudText Typo="Typo.h6" Class="mb-3">@Localization.Translate("EnterProductionForDate")</MudText>
     
     <MudGrid Class="mb-4">
         <MudItem xs="12" md="6">
-            <MudDatePicker @bind-Date="productionDate" Label="Production Date" Variant="Variant.Outlined" Required="true" />
+            <MudDatePicker @bind-Date="productionDate" Label="@Localization.Translate("ProductionDate")" Variant="Variant.Outlined" Required="true" />
         </MudItem>
         <MudItem xs="12" md="6">
-            <MudSelect @bind-Value="selectedShift" Label="Shift" Variant="Variant.Outlined" Required="true" T="string">
-                <MudSelectItem T="string" Value="@("Morning")">Morning</MudSelectItem>
-                <MudSelectItem T="string" Value="@("Afternoon")">Afternoon</MudSelectItem>
-                <MudSelectItem T="string" Value="@("Night")">Night</MudSelectItem>
+            <MudSelect @bind-Value="selectedShift" Label="@Localization.Translate("Shift")" Variant="Variant.Outlined" Required="true" T="string">
+                <MudSelectItem T="string" Value="@("Morning")">@Localization.Translate("Morning")</MudSelectItem>
+                <MudSelectItem T="string" Value="@("Afternoon")">@Localization.Translate("Afternoon")</MudSelectItem>
+                <MudSelectItem T="string" Value="@("Night")">@Localization.Translate("Night")</MudSelectItem>
             </MudSelect>
         </MudItem>
     </MudGrid>
 
     <MudTextField @bind-Value="productionNotes" 
-                  Label="Production Notes" 
+                  Label="@Localization.Translate("ProductionNotes")" 
                   Variant="Variant.Outlined" 
                   Lines="3" 
-                  Placeholder="Enter notes about this production batch (e.g., quality issues, machine status, etc.)"
+                  Placeholder="@Localization.Translate("Notes")"
                   Class="mb-4" />
     
     @if (products == null)
@@ -39,7 +41,7 @@
     }
     else if (products.Any())
     {
-        <MudText Typo="Typo.subtitle1" Class="mb-3"><strong>Enter quantities for each product:</strong></MudText>
+        <MudText Typo="Typo.subtitle1" Class="mb-3"><strong>@Localization.Translate("EnterQuantitiesForEachProduct")</strong></MudText>
         
         <MudGrid>
             @foreach (var product in products.Where(p => p.IsActive).OrderBy(p => p.Capacity))
@@ -50,23 +52,23 @@
                                      Variant="Variant.Outlined" 
                                      Min="0" 
                                      Adornment="Adornment.End" 
-                                     AdornmentText="units" />
+                                     AdornmentText="@Localization.Translate("Units")" />
                 </MudItem>
             }
         </MudGrid>
         
         <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Save" 
                    OnClick="SaveDailyProduction" Class="mt-4" Disabled="@(!productionDate.HasValue)">
-            Save Daily Production
+            @Localization.Translate("SaveDailyProduction")
         </MudButton>
     }
     else
     {
-        <MudAlert Severity="Severity.Warning">No active products found. Please add products first.</MudAlert>
+        <MudAlert Severity="Severity.Warning">@Localization.Translate("NoActiveProductsFound")</MudAlert>
     }
 </MudPaper>
 
-<MudText Typo="Typo.h5" Class="mb-3">Historical Daily Production</MudText>
+<MudText Typo="Typo.h5" Class="mb-3">@Localization.Translate("HistoricalDailyProduction")</MudText>
 
 @if (historicalOrders == null)
 {
@@ -76,12 +78,12 @@ else if (historicalOrders.Any())
 {
     <MudTable Items="@historicalOrders" Hover="true" Striped="true" Dense="true" Elevation="2" GroupBy="@_groupDefinition">
         <HeaderContent>
-            <MudTh>Product</MudTh>
-            <MudTh>Quantity</MudTh>
-            <MudTh>Shift</MudTh>
-            <MudTh>Status</MudTh>
-            <MudTh>Order Number</MudTh>
-            <MudTh>Notes</MudTh>
+            <MudTh>@Localization.Translate("Product")</MudTh>
+            <MudTh>@Localization.Translate("Quantity")</MudTh>
+            <MudTh>@Localization.Translate("Shift")</MudTh>
+            <MudTh>@Localization.Translate("Status")</MudTh>
+            <MudTh>@Localization.Translate("OrderNumber")</MudTh>
+            <MudTh>@Localization.Translate("Notes")</MudTh>
         </HeaderContent>
         <GroupHeaderTemplate>
             <MudTh Class="mud-table-cell-custom-group" colspan="6">
@@ -92,16 +94,16 @@ else if (historicalOrders.Any())
             </MudTh>
         </GroupHeaderTemplate>
         <RowTemplate>
-            <MudTd DataLabel="Product">@context.ProductName</MudTd>
-            <MudTd DataLabel="Quantity">@context.Quantity</MudTd>
-            <MudTd DataLabel="Shift">
+            <MudTd DataLabel="@Localization.Translate("Product")">@context.ProductName</MudTd>
+            <MudTd DataLabel="@Localization.Translate("Quantity")">@context.Quantity</MudTd>
+            <MudTd DataLabel="@Localization.Translate("Shift")">
                 <MudChip T="string" Color="@GetShiftColor(context.Shift)" Size="Size.Small" Variant="Variant.Outlined">@context.Shift</MudChip>
             </MudTd>
-            <MudTd DataLabel="Status">
+            <MudTd DataLabel="@Localization.Translate("Status")">
                 <MudChip T="string" Color="@GetStatusColor(context.Status)" Size="Size.Small">@context.Status</MudChip>
             </MudTd>
-            <MudTd DataLabel="Order Number">@context.OrderNumber</MudTd>
-            <MudTd DataLabel="Notes">
+            <MudTd DataLabel="@Localization.Translate("OrderNumber")">@context.OrderNumber</MudTd>
+            <MudTd DataLabel="@Localization.Translate("Notes")">
                 @if (!string.IsNullOrWhiteSpace(context.Notes))
                 {
                     <MudTooltip Text="@context.Notes">
@@ -114,7 +116,7 @@ else if (historicalOrders.Any())
 }
 else
 {
-    <MudAlert Severity="Severity.Info">No production history found. Start by entering your first daily production!</MudAlert>
+    <MudAlert Severity="Severity.Info">@Localization.Translate("NoProductionHistoryFound")</MudAlert>
 }
 
 @code {
