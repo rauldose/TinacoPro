@@ -2,8 +2,10 @@
 @rendermode InteractiveServer
 @using TinacoPro.Application.Services
 @using TinacoPro.Application.DTOs
+@using TinacoPro.Web.Services
 @inject ProductService ProductService
 @inject ProductTemplateService TemplateService
+@inject LocalizationService Localization
 @inject ISnackbar Snackbar
 
 <PageTitle>Products - TinacoPro</PageTitle>
@@ -110,12 +112,9 @@ else
             <MudItem xs="12">
                 <MudTextField @bind-Value="formModel.Description" Label="Description" Variant="Variant.Outlined" Lines="3" />
             </MudItem>
-            @if (editingProduct != null)
-            {
-                <MudItem xs="12">
-                    <MudSwitch T="bool" @bind-Checked="formModel.IsActive" Label="Active" Color="Color.Success" />
-                </MudItem>
-            }
+            <MudItem xs="12">
+                <MudSwitch T="bool" @bind-Checked="formModel.IsActive" Label="@Localization.Translate("Active")" Color="Color.Success" />
+            </MudItem>
             
             @if (formModel.TemplateId.HasValue && templates != null)
             {

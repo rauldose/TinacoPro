@@ -1,6 +1,7 @@
 ﻿@inherits LayoutComponentBase
 @inject IJSRuntime JS
 @inject LocalizationService Localization
+@inject NavigationManager Navigation
 @using TinacoPro.Web.Services
 
 <MudThemeProvider Theme="@_theme" @bind-IsDarkMode="@_isDarkMode" />
@@ -57,12 +58,12 @@
             BackgroundGray = "#111214",
             Surface = "#111214",
             DrawerBackground = "#0a0a0b",
-            DrawerText = "#e5e5e5",
+            DrawerText = "#ffffff",
             AppbarBackground = "#0a0a0b",
-            AppbarText = "#e5e5e5",
-            TextPrimary = "#e5e5e5",
-            TextSecondary = "#888888",
-            ActionDefault = "#e5e5e5",
+            AppbarText = "#ffffff",
+            TextPrimary = "#ffffff",
+            TextSecondary = "#a0a0a0",
+            ActionDefault = "#ffffff",
             ActionDisabled = "#666666",
             Divider = "#222222",
             DividerLight = "#1a1a1a",
@@ -127,7 +128,10 @@
     {
         _currentLanguage = language;
         await Localization.SetLanguageAsync(language);
+        await JS.InvokeVoidAsync("localStorage.setItem", "language", language);
         StateHasChanged();
+        // Force page reload to propagate translations to all components
+        Navigation.NavigateTo(Navigation.Uri, forceLoad: true);
     }
 
     private void DrawerToggle()

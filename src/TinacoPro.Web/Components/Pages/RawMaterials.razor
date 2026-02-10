@@ -2,7 +2,9 @@
 @rendermode InteractiveServer
 @using TinacoPro.Application.Services
 @using TinacoPro.Application.DTOs
+@using TinacoPro.Web.Services
 @inject RawMaterialService MaterialService
+@inject LocalizationService Localization
 
 <PageTitle>Raw Materials - TinacoPro</PageTitle>
 
@@ -92,10 +94,7 @@ else
         <MudTextField @bind-Value="formModel.Unit" Label="Unit (kg, L, pcs)" Variant="Variant.Outlined" Class="mb-3" Required="true" />
         <MudNumericField @bind-Value="formModel.MinimumStock" Label="Minimum Stock" Variant="Variant.Outlined" Class="mb-3" Min="0" />
         <MudNumericField @bind-Value="formModel.UnitCost" Label="Unit Cost" Variant="Variant.Outlined" Class="mb-3" Min="0" Format="N2" />
-        @if (editingMaterial != null)
-        {
-            <MudSwitch T="bool" @bind-Checked="formModel.IsActive" Label="Active" Color="Color.Success" />
-        }
+        <MudSwitch T="bool" @bind-Checked="formModel.IsActive" Label="@Localization.Translate("Active")" Color="Color.Success" />
     </DialogContent>
     <DialogActions>
         <MudButton OnClick="HideForm" Variant="Variant.Text">Cancel</MudButton>
