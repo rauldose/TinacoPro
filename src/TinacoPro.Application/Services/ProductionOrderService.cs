@@ -43,6 +43,7 @@ public class ProductionOrderService
             ProductName = productDict.GetValueOrDefault(o.ProductId, "Unknown"),
             Quantity = o.Quantity,
             Status = o.Status.ToString(),
+            Shift = o.Shift.ToString(),
             OrderDate = o.OrderDate,
             CompletedDate = o.CompletedDate,
             Notes = o.Notes
@@ -64,6 +65,7 @@ public class ProductionOrderService
             ProductName = product?.Name ?? "Unknown",
             Quantity = order.Quantity,
             Status = order.Status.ToString(),
+            Shift = order.Shift.ToString(),
             OrderDate = order.OrderDate,
             CompletedDate = order.CompletedDate,
             Notes = order.Notes
@@ -76,12 +78,18 @@ public class ProductionOrderService
     {
         var orderNumber = $"PO-{DateTime.UtcNow:yyyyMMdd}-{_random.Next(1000, 9999)}";
         
+        // Parse shift from string
+        Shift shift = Enum.TryParse<Shift>(dto.Shift, true, out var parsedShift) 
+            ? parsedShift 
+            : Shift.Morning;
+        
         var order = new ProductionOrder
         {
             OrderNumber = orderNumber,
             ProductId = dto.ProductId,
             Quantity = dto.Quantity,
             Status = OrderStatus.Pending,
+            Shift = shift,
             OrderDate = DateTime.UtcNow,
             Notes = dto.Notes,
             CreatedAt = DateTime.UtcNow
@@ -98,6 +106,7 @@ public class ProductionOrderService
             ProductName = product?.Name ?? "Unknown",
             Quantity = created.Quantity,
             Status = created.Status.ToString(),
+            Shift = created.Shift.ToString(),
             OrderDate = created.OrderDate,
             CompletedDate = created.CompletedDate,
             Notes = created.Notes
