@@ -2,7 +2,9 @@
 @rendermode InteractiveServer
 @using TinacoPro.Application.Services
 @using TinacoPro.Application.DTOs
+@using TinacoPro.Web.Services
 @inject SupplierService SupplierService
+@inject LocalizationService Localization
 
 <PageTitle>Suppliers - TinacoPro</PageTitle>
 
@@ -76,10 +78,7 @@ else
         <MudTextField @bind-Value="formModel.Phone" Label="Phone" Variant="Variant.Outlined" Class="mb-3" />
         <MudTextField @bind-Value="formModel.Email" Label="Email" Variant="Variant.Outlined" Class="mb-3" InputType="InputType.Email" />
         <MudTextField @bind-Value="formModel.Address" Label="Address" Variant="Variant.Outlined" Lines="3" Class="mb-3" />
-        @if (editingSupplier != null)
-        {
-            <MudSwitch T="bool" @bind-Checked="formModel.IsActive" Label="Active" Color="Color.Success" />
-        }
+        <MudSwitch T="bool" @bind-Checked="formModel.IsActive" Label="@Localization.Translate("Active")" Color="Color.Success" />
     </DialogContent>
     <DialogActions>
         <MudButton OnClick="HideForm" Variant="Variant.Text">Cancel</MudButton>

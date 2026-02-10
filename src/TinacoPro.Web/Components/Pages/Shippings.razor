@@ -1,0 +1,277 @@
+@page "/shippings"
+@rendermode InteractiveServer
+@using TinacoPro.Application.Services
+@using TinacoPro.Application.DTOs
+@using TinacoPro.Domain.Entities
+@using TinacoPro.Web.Services
+@inject ShipmentService ShipmentService
+@inject ProductService ProductService
+@inject FinishedGoodsService FinishedGoodsService
+@inject ISnackbar Snackbar
+@inject LocalizationService Localization
+
+<PageTitle>Shipments - TinacoPro</PageTitle>
+
+<MudText Typo="Typo.h4" Class="mb-4">Shipment Management</MudText>
+
+<MudPaper Class="pa-4 mb-4" Elevation="2">
+    <MudGrid>
+        <MudItem xs="12" sm="6" md="3">
+            <MudSelect @bind-Value="selectedStatusString" Label="Filter by Status" Variant="Variant.Outlined" Clearable="true" T="string">
+                <MudSelectItem T="string" Value="@((string?)null)">All Statuses</MudSelectItem>
+                <MudSelectItem T="string" Value="@("Pending")">Pending</MudSelectItem>
+                <MudSelectItem T="string" Value="@("InTransit")">In Transit</MudSelectItem>
+                <MudSelectItem T="string" Value="@("Delivered")">Delivered</MudSelectItem>
+                <MudSelectItem T="string" Value="@("Cancelled")">Cancelled</MudSelectItem>
+            </MudSelect>
+        </MudItem>
+        <MudItem xs="12" sm="6" md="3">
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" 
+                       OnClick="OpenNewShipmentDialog" FullWidth="true">
+                New Shipment
+            </MudButton>
+        </MudItem>
+    </MudGrid>
+</MudPaper>
+
+@if (shipments == null)
+{
+    <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+}
+else
+{
+    <MudTable Items="@FilteredShipments" Hover="true" Striped="true" Dense="true" Elevation="2">
+        <HeaderContent>
+            <MudTh>Shipment #</MudTh>
+            <MudTh>Customer</MudTh>
+            <MudTh>Product</MudTh>
+            <MudTh>Quantity</MudTh>
+            <MudTh>Destination</MudTh>
+            <MudTh>Shipment Date</MudTh>
+            <MudTh>Status</MudTh>
+            <MudTh>Actions</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="Shipment #">@context.ShipmentNumber</MudTd>
+            <MudTd DataLabel="Customer">
+                <MudText Typo="Typo.body2">@context.CustomerName</MudText>
+                <MudText Typo="Typo.caption" Color="Color.Secondary">@context.CustomerContact</MudText>
+            </MudTd>
+            <MudTd DataLabel="Product">@context.ProductName</MudTd>
+            <MudTd DataLabel="Quantity">@context.Quantity.ToString("F2")</MudTd>
+            <MudTd DataLabel="Destination">
+                <MudText Typo="Typo.body2">@context.DestinationCity</MudText>
+                <MudText Typo="Typo.caption" Color="Color.Secondary">@context.DestinationZone</MudText>
+            </MudTd>
+            <MudTd DataLabel="Shipment Date">@context.ShipmentDate.ToString("yyyy-MM-dd")</MudTd>
+            <MudTd DataLabel="Status">
+                <MudChip T="string" Color="@GetStatusColor(context.Status)" Size="Size.Small">@context.Status</MudChip>
+            </MudTd>
+            <MudTd DataLabel="Actions">
+                <MudMenu Icon="@Icons.Material.Filled.MoreVert" Size="Size.Small">
+                    <MudMenuItem OnClick="@(() => OpenEditShipmentDialog(context))">Edit</MudMenuItem>
+                    @if (context.Status == "Pending")
+                    {
+                        <MudMenuItem OnClick="@(() => UpdateStatus(context.Id, ShipmentStatus.InTransit))">Mark as In Transit</MudMenuItem>
+                    }
+                    @if (context.Status == "InTransit")
+                    {
+                        <MudMenuItem OnClick="@(() => UpdateStatus(context.Id, ShipmentStatus.Delivered))">Mark as Delivered</MudMenuItem>
+                    }
+                    @if (context.Status != "Delivered" && context.Status != "Cancelled")
+                    {
+                        <MudMenuItem OnClick="@(() => CancelShipment(context.Id))">Cancel Shipment</MudMenuItem>
+                    }
+                </MudMenu>
+            </MudTd>
+        </RowTemplate>
+    </MudTable>
+}
+
+<!-- New/Edit Shipment Dialog -->
+<MudDialog @bind-Visible="showShipmentDialog">
+    <TitleContent>
+        <MudText Typo="Typo.h6">@(editingShipmentId > 0 ? Localization.Translate("EditShipment") : Localization.Translate("NewShipment"))</MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudGrid>
+            <MudItem xs="12" md="6">
+                <MudSelect @bind-Value="editingShipment.ProductId" Label="@Localization.Translate("Product")" Required="true">
+                    @foreach (var product in products ?? Enumerable.Empty<ProductDto>())
+                    {
+                        <MudSelectItem Value="@product.Id">@product.Name</MudSelectItem>
+                    }
+                </MudSelect>
+            </MudItem>
+            <MudItem xs="12" md="6">
+                <MudSelect @bind-Value="editingShipment.FinishedGoodId" Label="@Localization.Translate("FinishedGoodOptional")" T="int?" Clearable="true">
+                    @foreach (var fg in finishedGoods ?? Enumerable.Empty<FinishedGoodsDto>())
+                    {
+                        <MudSelectItem T="int?" Value="@fg.Id">@fg.ProductName - Batch: @fg.BatchNumber (Qty: @fg.Quantity)</MudSelectItem>
+                    }
+                </MudSelect>
+            </MudItem>
+            <MudItem xs="12" md="6">
+                <MudNumericField @bind-Value="editingShipment.Quantity" Label="@Localization.Translate("Quantity")" T="decimal" Min="0" Required="true" />
+            </MudItem>
+            <MudItem xs="12" md="6">
+                <MudDatePicker @bind-Date="shipmentDate" Label="@Localization.Translate("ShipmentDate")" Required="true" />
+            </MudItem>
+            <MudItem xs="12" md="6">
+                <MudDatePicker @bind-Date="expectedDeliveryDate" Label="@Localization.Translate("ExpectedDeliveryDate")" />
+            </MudItem>
+            <MudItem xs="12">
+                <MudTextField @bind-Value="editingShipment.CustomerName" Label="@Localization.Translate("CustomerName")" Required="true" />
+            </MudItem>
+            <MudItem xs="12" md="6">
+                <MudTextField @bind-Value="editingShipment.CustomerContact" Label="@Localization.Translate("CustomerContact")" />
+            </MudItem>
+            <MudItem xs="12">
+                <MudTextField @bind-Value="editingShipment.DestinationAddress" Label="@Localization.Translate("DestinationAddress")" Lines="2" />
+            </MudItem>
+            <MudItem xs="12" md="6">
+                <MudTextField @bind-Value="editingShipment.DestinationCity" Label="@Localization.Translate("City")" />
+            </MudItem>
+            <MudItem xs="12" md="6">
+                <MudTextField @bind-Value="editingShipment.DestinationZone" Label="@Localization.Translate("ZoneState")" />
+            </MudItem>
+            <MudItem xs="12">
+                <MudTextField @bind-Value="editingShipment.Notes" Label="@Localization.Translate("Notes")" Lines="3" />
+            </MudItem>
+        </MudGrid>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="@(() => showShipmentDialog = false)">@Localization.Translate("Cancel")</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SaveShipment">@Localization.Translate("Save")</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    private IEnumerable<ShipmentDto>? shipments;
+    private IEnumerable<ProductDto>? products;
+    private IEnumerable<FinishedGoodsDto>? finishedGoods;
+    private string? selectedStatusString;
+    private bool showShipmentDialog;
+    private CreateShipmentDto editingShipment = new();
+    private int editingShipmentId = 0;
+    private DateTime? shipmentDate = DateTime.Today;
+    private DateTime? expectedDeliveryDate;
+
+    private IEnumerable<ShipmentDto> FilteredShipments
+    {
+        get
+        {
+            if (shipments == null) return Enumerable.Empty<ShipmentDto>();
+            if (string.IsNullOrWhiteSpace(selectedStatusString)) return shipments;
+            return shipments.Where(s => s.Status == selectedStatusString);
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        shipments = await ShipmentService.GetAllShipmentsAsync();
+        products = await ProductService.GetAllProductsAsync();
+        finishedGoods = await FinishedGoodsService.GetAllAsync();
+    }
+
+    private void OpenNewShipmentDialog()
+    {
+        editingShipmentId = 0;
+        editingShipment = new CreateShipmentDto();
+        shipmentDate = DateTime.Today;
+        expectedDeliveryDate = DateTime.Today.AddDays(3);
+        showShipmentDialog = true;
+    }
+
+    private void OpenEditShipmentDialog(ShipmentDto shipment)
+    {
+        editingShipmentId = shipment.Id;
+        editingShipment = new CreateShipmentDto
+        {
+            ProductId = shipment.ProductId,
+            FinishedGoodId = shipment.FinishedGoodId,
+            Quantity = shipment.Quantity,
+            CustomerName = shipment.CustomerName,
+            CustomerContact = shipment.CustomerContact,
+            DestinationAddress = shipment.DestinationAddress,
+            DestinationCity = shipment.DestinationCity,
+            DestinationZone = shipment.DestinationZone,
+            Notes = shipment.Notes
+        };
+        shipmentDate = shipment.ShipmentDate;
+        expectedDeliveryDate = shipment.ExpectedDeliveryDate;
+        showShipmentDialog = true;
+    }
+
+    private async Task SaveShipment()
+    {
+        try
+        {
+            editingShipment.ShipmentDate = shipmentDate ?? DateTime.Today;
+            editingShipment.ExpectedDeliveryDate = expectedDeliveryDate;
+
+            if (editingShipmentId > 0)
+            {
+                await ShipmentService.UpdateShipmentAsync(editingShipmentId, editingShipment);
+                Snackbar.Add("Shipment updated successfully", Severity.Success);
+            }
+            else
+            {
+                await ShipmentService.CreateShipmentAsync(editingShipment);
+                Snackbar.Add("Shipment created successfully", Severity.Success);
+            }
+
+            showShipmentDialog = false;
+            await LoadData();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private async Task UpdateStatus(int shipmentId, ShipmentStatus newStatus)
+    {
+        try
+        {
+            await ShipmentService.UpdateShipmentStatusAsync(shipmentId, newStatus);
+            Snackbar.Add($"Shipment status updated to {newStatus}", Severity.Success);
+            await LoadData();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private async Task CancelShipment(int shipmentId)
+    {
+        try
+        {
+            await ShipmentService.CancelShipmentAsync(shipmentId);
+            Snackbar.Add("Shipment cancelled successfully", Severity.Success);
+            await LoadData();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private Color GetStatusColor(string status)
+    {
+        return status switch
+        {
+            "Pending" => Color.Warning,
+            "InTransit" => Color.Info,
+            "Delivered" => Color.Success,
+            "Cancelled" => Color.Error,
+            _ => Color.Default
+        };
+    }
+}

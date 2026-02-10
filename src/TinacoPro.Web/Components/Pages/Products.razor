@@ -2,7 +2,11 @@
 @rendermode InteractiveServer
 @using TinacoPro.Application.Services
 @using TinacoPro.Application.DTOs
+@using TinacoPro.Web.Services
 @inject ProductService ProductService
+@inject ProductTemplateService TemplateService
+@inject LocalizationService Localization
+@inject ISnackbar Snackbar
 
 <PageTitle>Products - TinacoPro</PageTitle>
 
@@ -23,16 +27,35 @@ else if (products.Any())
         <HeaderContent>
             <MudTh>Name</MudTh>
             <MudTh>Model</MudTh>
-            <MudTh>Size</MudTh>
             <MudTh>Capacity (L)</MudTh>
+            <MudTh>Template</MudTh>
+            <MudTh>Material Cost</MudTh>
+            <MudTh>Labor Cost</MudTh>
+            <MudTh>Total Cost</MudTh>
             <MudTh>Status</MudTh>
             <MudTh>Actions</MudTh>
         </HeaderContent>
         <RowTemplate>
             <MudTd DataLabel="Name">@context.Name</MudTd>
             <MudTd DataLabel="Model">@context.Model</MudTd>
-            <MudTd DataLabel="Size">@context.Size</MudTd>
             <MudTd DataLabel="Capacity">@context.Capacity</MudTd>
+            <MudTd DataLabel="Template">
+                @if (context.TemplateName != null)
+                {
+                    <MudChip T="string" Size="Size.Small" Color="Color.Info" Icon="@Icons.Material.Filled.AccountTree">
+                        @context.TemplateName
+                    </MudChip>
+                }
+                else
+                {
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">No template</MudText>
+                }
+            </MudTd>
+            <MudTd DataLabel="Material Cost">$@context.MaterialCost.ToString("F2")</MudTd>
+            <MudTd DataLabel="Labor Cost">$@context.LaborCost.ToString("F2")</MudTd>
+            <MudTd DataLabel="Total Cost">
+                <MudText Typo="Typo.body2" Color="Color.Success"><strong>$@context.TotalCost.ToString("F2")</strong></MudText>
+            </MudTd>
             <MudTd DataLabel="Status">
                 <MudChip T="string" Color="@(context.IsActive ? Color.Success : Color.Default)" Size="Size.Small">
                     @(context.IsActive ? "Active" : "Inactive")
@@ -50,22 +73,65 @@ else
     <MudAlert Severity="Severity.Info">No products found. Create your first product!</MudAlert>
 }
 
-<MudDialog @bind-Visible="showForm">
+<MudDialog @bind-Visible="showForm" Options="@(new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true })">
     <TitleContent>
         <MudText Typo="Typo.h6">
             @(editingProduct == null ? "New Product" : "Edit Product")
         </MudText>
     </TitleContent>
     <DialogContent>
-        <MudTextField @bind-Value="formModel.Name" Label="Name" Variant="Variant.Outlined" Class="mb-3" Required="true" />
-        <MudTextField @bind-Value="formModel.Model" Label="Model" Variant="Variant.Outlined" Class="mb-3" Required="true" />
-        <MudTextField @bind-Value="formModel.Size" Label="Size" Variant="Variant.Outlined" Class="mb-3" />
-        <MudNumericField @bind-Value="formModel.Capacity" Label="Capacity (Liters)" Variant="Variant.Outlined" Class="mb-3" Min="0" />
-        <MudTextField @bind-Value="formModel.Description" Label="Description" Variant="Variant.Outlined" Lines="3" Class="mb-3" />
-        @if (editingProduct != null)
-        {
-            <MudSwitch T="bool" @bind-Checked="formModel.IsActive" Label="Active" Color="Color.Success" />
-        }
+        <MudGrid>
+            <MudItem xs="12" md="6">
+                <MudTextField @bind-Value="formModel.Name" Label="Name" Variant="Variant.Outlined" Required="true" />
+            </MudItem>
+            <MudItem xs="12" md="6">
+                <MudTextField @bind-Value="formModel.Model" Label="Model" Variant="Variant.Outlined" Required="true" />
+            </MudItem>
+            <MudItem xs="12" md="6">
+                <MudTextField @bind-Value="formModel.Size" Label="Size" Variant="Variant.Outlined" />
+            </MudItem>
+            <MudItem xs="12" md="6">
+                <MudNumericField @bind-Value="formModel.Capacity" Label="Capacity (Liters)" Variant="Variant.Outlined" Min="0" />
+            </MudItem>
+            <MudItem xs="12">
+                <MudSelect @bind-Value="formModel.TemplateId" Label="Production Template (Optional)" 
+                           Variant="Variant.Outlined" T="int?" Clearable="true"
+                           HelperText="Select a template to define BOM and costs">
+                    <MudSelectItem T="int?" Value="null">No Template</MudSelectItem>
+                    @if (templates != null)
+                    {
+                        @foreach (var template in templates.Where(t => t.IsActive))
+                        {
+                            <MudSelectItem T="int?" Value="@template.Id">
+                                @template.Name - @template.ModelType (Cost: $@((template.TotalMaterialCost + template.TotalLaborCost).ToString("F2")))
+                            </MudSelectItem>
+                        }
+                    }
+                </MudSelect>
+            </MudItem>
+            <MudItem xs="12">
+                <MudTextField @bind-Value="formModel.Description" Label="Description" Variant="Variant.Outlined" Lines="3" />
+            </MudItem>
+            <MudItem xs="12">
+                <MudSwitch T="bool" @bind-Checked="formModel.IsActive" Label="@Localization.Translate("Active")" Color="Color.Success" />
+            </MudItem>
+            
+            @if (formModel.TemplateId.HasValue && templates != null)
+            {
+                var selectedTemplate = templates.FirstOrDefault(t => t.Id == formModel.TemplateId.Value);
+                if (selectedTemplate != null)
+                {
+                    <MudItem xs="12">
+                        <MudAlert Severity="Severity.Info" Dense="true">
+                            <MudText Typo="Typo.caption"><strong>Template Costs:</strong></MudText>
+                            <MudText Typo="Typo.caption">Material Cost: $@selectedTemplate.TotalMaterialCost.ToString("F2")</MudText>
+                            <MudText Typo="Typo.caption">Labor Cost: $@selectedTemplate.TotalLaborCost.ToString("F2")</MudText>
+                            <MudText Typo="Typo.caption"><strong>Total: $@((selectedTemplate.TotalMaterialCost + selectedTemplate.TotalLaborCost).ToString("F2"))</strong></MudText>
+                        </MudAlert>
+                    </MudItem>
+                }
+            }
+        </MudGrid>
     </DialogContent>
     <DialogActions>
         <MudButton OnClick="HideForm" Variant="Variant.Text">Cancel</MudButton>
@@ -75,6 +141,7 @@ else
 
 @code {
     private IEnumerable<ProductDto>? products;
+    private IEnumerable<ProductTemplateDto>? templates;
     private bool showForm = false;
     private ProductDto? editingProduct;
     private ProductFormModel formModel = new();
@@ -82,11 +149,17 @@ else
     protected override async Task OnInitializedAsync()
     {
         await LoadProducts();
+        await LoadTemplates();
     }
 
     private async Task LoadProducts()
     {
         products = await ProductService.GetAllProductsAsync();
+    }
+
+    private async Task LoadTemplates()
+    {
+        templates = await TemplateService.GetAllTemplatesAsync();
     }
 
     private void ShowCreateForm()
@@ -106,7 +179,8 @@ else
             Size = product.Size,
             Capacity = product.Capacity,
             Description = product.Description,
-            IsActive = product.IsActive
+            IsActive = product.IsActive,
+            TemplateId = product.TemplateId
         };
         showForm = true;
     }
@@ -119,31 +193,42 @@ else
 
     private async Task SaveProduct()
     {
-        if (editingProduct == null)
+        try
         {
-            var createDto = new CreateProductDto
+            if (editingProduct == null)
             {
-                Name = formModel.Name,
-                Model = formModel.Model,
-                Size = formModel.Size,
-                Capacity = formModel.Capacity,
-                Description = formModel.Description
-            };
-            await ProductService.CreateProductAsync(createDto);
+                var createDto = new CreateProductDto
+                {
+                    Name = formModel.Name,
+                    Model = formModel.Model,
+                    Size = formModel.Size,
+                    Capacity = formModel.Capacity,
+                    Description = formModel.Description,
+                    TemplateId = formModel.TemplateId
+                };
+                await ProductService.CreateProductAsync(createDto);
+                Snackbar.Add("Product created successfully!", Severity.Success);
+            }
+            else
+            {
+                editingProduct.Name = formModel.Name;
+                editingProduct.Model = formModel.Model;
+                editingProduct.Size = formModel.Size;
+                editingProduct.Capacity = formModel.Capacity;
+                editingProduct.Description = formModel.Description;
+                editingProduct.IsActive = formModel.IsActive;
+                editingProduct.TemplateId = formModel.TemplateId;
+                await ProductService.UpdateProductAsync(editingProduct);
+                Snackbar.Add("Product updated successfully!", Severity.Success);
+            }
+            
+            HideForm();
+            await LoadProducts();
         }
-        else
+        catch (Exception ex)
         {
-            editingProduct.Name = formModel.Name;
-            editingProduct.Model = formModel.Model;
-            editingProduct.Size = formModel.Size;
-            editingProduct.Capacity = formModel.Capacity;
-            editingProduct.Description = formModel.Description;
-            editingProduct.IsActive = formModel.IsActive;
-            await ProductService.UpdateProductAsync(editingProduct);
+            Snackbar.Add($"Error saving product: {ex.Message}", Severity.Error);
         }
-        
-        HideForm();
-        await LoadProducts();
     }
 
     private class ProductFormModel
@@ -154,5 +239,6 @@ else
         public decimal Capacity { get; set; }
         public string Description { get; set; } = string.Empty;
         public bool IsActive { get; set; } = true;
+        public int? TemplateId { get; set; }
     }
 }

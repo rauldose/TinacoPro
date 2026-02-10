@@ -1,0 +1,214 @@
+@page "/finished-goods"
+@rendermode InteractiveServer
+@using TinacoPro.Application.Services
+@using TinacoPro.Application.DTOs
+@using TinacoPro.Web.Services
+@inject FinishedGoodsService FinishedGoodsService
+@inject ProductService ProductService
+@inject ProductionOrderService ProductionOrderService
+@inject IDialogService DialogService
+@inject LocalizationService Localization
+
+<PageTitle>Finished Goods - TinacoPro</PageTitle>
+
+<MudText Typo="Typo.h4" Class="mb-4">Finished Goods Inventory</MudText>
+
+<MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" 
+           OnClick="ShowCreateForm" Class="mb-4">
+    New Finished Good Entry
+</MudButton>
+
+@if (finishedGoods == null)
+{
+    <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+}
+else if (finishedGoods.Any())
+{
+    <MudTable Items="@finishedGoods" Hover="true" Striped="true" Dense="true" Elevation="2">
+        <HeaderContent>
+            <MudTh>Product</MudTh>
+            <MudTh>Batch Number</MudTh>
+            <MudTh>Order</MudTh>
+            <MudTh>Quantity Produced</MudTh>
+            <MudTh>Current Stock</MudTh>
+            <MudTh>Production Date</MudTh>
+            <MudTh>Actions</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="Product">@context.ProductName</MudTd>
+            <MudTd DataLabel="Batch">@context.BatchNumber</MudTd>
+            <MudTd DataLabel="Order">@context.OrderNumber</MudTd>
+            <MudTd DataLabel="Quantity">@context.Quantity</MudTd>
+            <MudTd DataLabel="Stock">
+                <MudChip T="string" Color="@GetStockColor(context)" Size="Size.Small">
+                    @context.CurrentStock.ToString("F2")
+                </MudChip>
+            </MudTd>
+            <MudTd DataLabel="Date">@context.ProductionDate.ToString("yyyy-MM-dd")</MudTd>
+            <MudTd DataLabel="Actions">
+                <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Color="Color.Info"
+                               OnClick="@(() => ShowEditForm(context))" Title="@Localization.Translate("AdjustStock")" />
+                <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error"
+                               OnClick="@(() => DeleteFinishedGood(context.Id))" Title="@Localization.Translate("Delete")" />
+            </MudTd>
+        </RowTemplate>
+    </MudTable>
+}
+else
+{
+    <MudAlert Severity="Severity.Info">No finished goods found. Complete a production order to create finished goods!</MudAlert>
+}
+
+<MudDialog @bind-Visible="showForm">
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            @(editingFinishedGood == null ? Localization.Translate("NewFinishedGoodEntry") : Localization.Translate("AdjustStock"))
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        @if (editingFinishedGood == null)
+        {
+            <!-- Create Mode - All fields editable -->
+            <MudSelect T="int" @bind-Value="formModel.ProductId" Label="@Localization.Translate("Product")" Variant="Variant.Outlined" Class="mb-3" Required="true">
+                @if (products != null)
+                {
+                    @foreach (var product in products)
+                    {
+                        <MudSelectItem Value="@product.Id">@product.Name</MudSelectItem>
+                    }
+                }
+            </MudSelect>
+            <MudSelect T="int" @bind-Value="formModel.ProductionOrderId" Label="@Localization.Translate("ProductionOrder")" Variant="Variant.Outlined" Class="mb-3" Required="true">
+                @if (productionOrders != null)
+                {
+                    @foreach (var order in productionOrders)
+                    {
+                        <MudSelectItem Value="@order.Id">@order.OrderNumber - @order.ProductName</MudSelectItem>
+                    }
+                }
+            </MudSelect>
+            <MudNumericField @bind-Value="formModel.Quantity" Label="@Localization.Translate("QuantityProduced")" Variant="Variant.Outlined" Class="mb-3" Min="0" Required="true" />
+            <MudTextField @bind-Value="formModel.BatchNumber" Label="@Localization.Translate("BatchNumber")" Variant="Variant.Outlined" Class="mb-3" />
+            <MudNumericField @bind-Value="formModel.CurrentStock" Label="@Localization.Translate("CurrentStock")" Variant="Variant.Outlined" Class="mb-3" Min="0" Required="true" />
+        }
+        else
+        {
+            <!-- Edit Mode - Show all information, make relevant fields editable -->
+            <MudTextField Value="@editingFinishedGood.ProductName" Label="@Localization.Translate("Product")" Variant="Variant.Outlined" Class="mb-3" ReadOnly="true" />
+            <MudTextField Value="@editingFinishedGood.OrderNumber" Label="@Localization.Translate("ProductionOrder")" Variant="Variant.Outlined" Class="mb-3" ReadOnly="true" />
+            <MudTextField Value="@editingFinishedGood.ProductionDate.ToString("yyyy-MM-dd")" Label="@Localization.Translate("ProductionDate")" Variant="Variant.Outlined" Class="mb-3" ReadOnly="true" />
+            <MudTextField @bind-Value="formModel.BatchNumber" Label="@Localization.Translate("BatchNumber")" Variant="Variant.Outlined" Class="mb-3" />
+            <MudNumericField @bind-Value="formModel.Quantity" Label="@Localization.Translate("QuantityProduced")" Variant="Variant.Outlined" Class="mb-3" Min="0" Required="true" />
+            <MudNumericField @bind-Value="formModel.CurrentStock" Label="@Localization.Translate("CurrentStock")" Variant="Variant.Outlined" Class="mb-3" Min="0" Required="true" />
+        }
+        <MudTextField @bind-Value="formModel.Notes" Label="@Localization.Translate("Notes")" Variant="Variant.Outlined" Lines="3" Class="mb-3" />
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="HideForm" Variant="Variant.Text">@Localization.Translate("Cancel")</MudButton>
+        <MudButton OnClick="SaveFinishedGood" Variant="Variant.Filled" Color="Color.Primary">@Localization.Translate("Save")</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    private IEnumerable<FinishedGoodsDto>? finishedGoods;
+    private IEnumerable<ProductDto>? products;
+    private IEnumerable<ProductionOrderDto>? productionOrders;
+    private bool showForm = false;
+    private FinishedGoodsDto? editingFinishedGood;
+    private FinishedGoodFormModel formModel = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        finishedGoods = await FinishedGoodsService.GetAllAsync();
+        products = await ProductService.GetAllProductsAsync();
+        productionOrders = await ProductionOrderService.GetAllOrdersAsync();
+    }
+
+    private Color GetStockColor(FinishedGoodsDto finishedGood)
+    {
+        if (finishedGood.CurrentStock == 0)
+            return Color.Error;
+        if (finishedGood.CurrentStock < finishedGood.Quantity * 0.3m)
+            return Color.Warning;
+        return Color.Success;
+    }
+
+    private void ShowCreateForm()
+    {
+        editingFinishedGood = null;
+        formModel = new FinishedGoodFormModel();
+        showForm = true;
+    }
+
+    private void ShowEditForm(FinishedGoodsDto finishedGood)
+    {
+        editingFinishedGood = finishedGood;
+        formModel = new FinishedGoodFormModel
+        {
+            CurrentStock = finishedGood.CurrentStock,
+            Notes = finishedGood.Notes
+        };
+        showForm = true;
+    }
+
+    private void HideForm()
+    {
+        showForm = false;
+        editingFinishedGood = null;
+    }
+
+    private async Task SaveFinishedGood()
+    {
+        if (editingFinishedGood == null)
+        {
+            // Create new
+            var dto = new CreateFinishedGoodsDto
+            {
+                ProductId = formModel.ProductId,
+                ProductionOrderId = formModel.ProductionOrderId,
+                Quantity = formModel.Quantity,
+                CurrentStock = formModel.CurrentStock > 0 ? formModel.CurrentStock : formModel.Quantity,
+                BatchNumber = formModel.BatchNumber,
+                Notes = formModel.Notes
+            };
+            await FinishedGoodsService.CreateAsync(dto);
+        }
+        else
+        {
+            // Update stock
+            await FinishedGoodsService.UpdateQuantityAsync(editingFinishedGood.Id, formModel.CurrentStock);
+        }
+
+        HideForm();
+        await LoadData();
+    }
+
+    private async Task DeleteFinishedGood(int id)
+    {
+        var result = await DialogService.ShowMessageBox(
+            Localization.Translate("ConfirmDelete"),
+            Localization.Translate("AreYouSure"),
+            yesText: Localization.Translate("Delete"), cancelText: Localization.Translate("Cancel"));
+
+        if (result == true)
+        {
+            await FinishedGoodsService.DeleteAsync(id);
+            await LoadData();
+        }
+    }
+
+    private class FinishedGoodFormModel
+    {
+        public int ProductId { get; set; }
+        public int ProductionOrderId { get; set; }
+        public decimal Quantity { get; set; }
+        public decimal CurrentStock { get; set; }
+        public string BatchNumber { get; set; } = string.Empty;
+        public string Notes { get; set; } = string.Empty;
+    }
+}

@@ -22,6 +22,13 @@ public enum OrderPriority
     High
 }
 
+public enum Shift
+{
+    Morning,
+    Afternoon,
+    Night
+}
+
 public class ProductionOrder : BaseEntity
 {
     public string OrderNumber { get; set; } = string.Empty;
@@ -30,6 +37,7 @@ public class ProductionOrder : BaseEntity
     public int CompletedQuantity { get; set; } = 0;
     public OrderStatus Status { get; set; } = OrderStatus.Pending;
     public OrderPriority Priority { get; set; } = OrderPriority.Medium;
+    public Shift Shift { get; set; } = Shift.Morning;
     public DateTime OrderDate { get; set; }
     public DateTime? StartDate { get; set; }
     public DateTime? CompletedDate { get; set; }

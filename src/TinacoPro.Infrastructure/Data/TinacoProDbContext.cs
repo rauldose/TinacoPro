@@ -22,6 +22,8 @@ public class TinacoProDbContext : DbContext
     public DbSet<AssemblyLog> AssemblyLogs => Set<AssemblyLog>();
     public DbSet<ProductTemplate> ProductTemplates => Set<ProductTemplate>();
     public DbSet<TemplatePart> TemplateParts => Set<TemplatePart>();
+    public DbSet<MaterialConsumptionLog> MaterialConsumptionLogs => Set<MaterialConsumptionLog>();
+    public DbSet<Shipment> Shipments => Set<Shipment>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -237,6 +239,50 @@ public class TinacoProDbContext : DbContext
             .WithMany(t => t.Products)
             .HasForeignKey(p => p.TemplateId)
             .OnDelete(DeleteBehavior.SetNull);
+
+        // MaterialConsumptionLog configuration
+        modelBuilder.Entity<MaterialConsumptionLog>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.QuantityConsumed).HasPrecision(18, 2);
+            entity.Property(e => e.UnitCostAtConsumption).HasPrecision(18, 2);
+            entity.Property(e => e.TotalCost).HasPrecision(18, 2);
+            entity.Property(e => e.Notes).HasMaxLength(500);
+            
+            entity.HasOne(e => e.ProductionOrder)
+                .WithMany()
+                .HasForeignKey(e => e.ProductionOrderId)
+                .OnDelete(DeleteBehavior.Cascade);
+            
+            entity.HasOne(e => e.RawMaterial)
+                .WithMany()
+                .HasForeignKey(e => e.RawMaterialId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        // Shipment configuration
+        modelBuilder.Entity<Shipment>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.ShipmentNumber).IsRequired().HasMaxLength(50);
+            entity.Property(e => e.Quantity).HasPrecision(18, 2);
+            entity.Property(e => e.CustomerName).IsRequired().HasMaxLength(200);
+            entity.Property(e => e.CustomerContact).HasMaxLength(100);
+            entity.Property(e => e.DestinationAddress).HasMaxLength(500);
+            entity.Property(e => e.DestinationCity).HasMaxLength(100);
+            entity.Property(e => e.DestinationZone).HasMaxLength(100);
+            entity.Property(e => e.Notes).HasMaxLength(500);
+
+            entity.HasOne(e => e.Product)
+                .WithMany()
+                .HasForeignKey(e => e.ProductId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(e => e.FinishedGood)
+                .WithMany()
+                .HasForeignKey(e => e.FinishedGoodId)
+                .OnDelete(DeleteBehavior.SetNull);
+        });
 
         // Seed initial data
         SeedData(modelBuilder);
