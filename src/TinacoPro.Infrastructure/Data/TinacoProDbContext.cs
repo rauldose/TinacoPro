@@ -22,6 +22,7 @@ public class TinacoProDbContext : DbContext
     public DbSet<AssemblyLog> AssemblyLogs => Set<AssemblyLog>();
     public DbSet<ProductTemplate> ProductTemplates => Set<ProductTemplate>();
     public DbSet<TemplatePart> TemplateParts => Set<TemplatePart>();
+    public DbSet<MaterialConsumptionLog> MaterialConsumptionLogs => Set<MaterialConsumptionLog>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -237,6 +238,26 @@ public class TinacoProDbContext : DbContext
             .WithMany(t => t.Products)
             .HasForeignKey(p => p.TemplateId)
             .OnDelete(DeleteBehavior.SetNull);
+
+        // MaterialConsumptionLog configuration
+        modelBuilder.Entity<MaterialConsumptionLog>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.QuantityConsumed).HasPrecision(18, 2);
+            entity.Property(e => e.UnitCostAtConsumption).HasPrecision(18, 2);
+            entity.Property(e => e.TotalCost).HasPrecision(18, 2);
+            entity.Property(e => e.Notes).HasMaxLength(500);
+            
+            entity.HasOne(e => e.ProductionOrder)
+                .WithMany()
+                .HasForeignKey(e => e.ProductionOrderId)
+                .OnDelete(DeleteBehavior.Cascade);
+            
+            entity.HasOne(e => e.RawMaterial)
+                .WithMany()
+                .HasForeignKey(e => e.RawMaterialId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
 
         // Seed initial data
         SeedData(modelBuilder);

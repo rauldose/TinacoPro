@@ -9,15 +9,18 @@ public class ProductionOrderService
     private readonly IProductionOrderRepository _orderRepository;
     private readonly IProductRepository _productRepository;
     private readonly IRawMaterialRepository _materialRepository;
+    private readonly IProductTemplateRepository _templateRepository;
 
     public ProductionOrderService(
         IProductionOrderRepository orderRepository,
         IProductRepository productRepository,
-        IRawMaterialRepository materialRepository)
+        IRawMaterialRepository materialRepository,
+        IProductTemplateRepository templateRepository)
     {
         _orderRepository = orderRepository;
         _productRepository = productRepository;
         _materialRepository = materialRepository;
+        _templateRepository = templateRepository;
     }
 
     public async Task<IEnumerable<ProductionOrderDto>> GetAllOrdersAsync()
@@ -109,28 +112,120 @@ public class ProductionOrderService
     public async Task CompleteOrderAsync(int orderId)
     {
         var order = await _orderRepository.GetByIdAsync(orderId);
-        if (order != null && order.Status == OrderStatus.InProgress)
+        if (order == null || order.Status != OrderStatus.InProgress)
         {
-            // Consume raw materials automatically
-            var product = await _productRepository.GetByIdAsync(order.ProductId);
-            if (product != null)
+            return;
+        }
+
+        var product = await _productRepository.GetByIdAsync(order.ProductId);
+        if (product == null)
+        {
+            throw new InvalidOperationException($"Product with ID {order.ProductId} not found");
+        }
+
+        // If product has a template, use template-based depletion
+        if (product.TemplateId.HasValue)
+        {
+            await DepleteMaterialsFromTemplateAsync(order, product.TemplateId.Value);
+        }
+        else
+        {
+            // Fall back to ProductMaterials-based depletion (legacy method)
+            await DepleteMaterialsFromProductBOMAsync(order, product);
+        }
+
+        order.Status = OrderStatus.Completed;
+        order.CompletedDate = DateTime.UtcNow;
+        order.UpdatedAt = DateTime.UtcNow;
+        await _orderRepository.UpdateAsync(order);
+    }
+
+    private async Task DepleteMaterialsFromTemplateAsync(ProductionOrder order, int templateId)
+    {
+        // Load template with all parts
+        var template = await _templateRepository.GetByIdWithPartsAsync(templateId);
+        if (template == null)
+        {
+            throw new InvalidOperationException($"Template with ID {templateId} not found");
+        }
+
+        // Calculate material requirements from template hierarchy
+        var materialRequirements = new Dictionary<int, decimal>();
+        await CollectMaterialRequirementsAsync(template.Parts.Where(p => p.ParentPartId == null), materialRequirements);
+
+        // Validate sufficient stock before depletion
+        var insufficientMaterials = new List<string>();
+        foreach (var requirement in materialRequirements)
+        {
+            var material = await _materialRepository.GetByIdAsync(requirement.Key);
+            if (material != null)
             {
-                foreach (var pm in product.ProductMaterials)
+                var totalRequired = requirement.Value * order.Quantity;
+                if (material.CurrentStock < totalRequired)
                 {
-                    var material = await _materialRepository.GetByIdAsync(pm.RawMaterialId);
-                    if (material != null)
-                    {
-                        var requiredQuantity = pm.QuantityRequired * order.Quantity;
-                        material.CurrentStock -= requiredQuantity;
-                        await _materialRepository.UpdateAsync(material);
-                    }
+                    insufficientMaterials.Add($"{material.Name} (Required: {totalRequired:F2} {material.Unit}, Available: {material.CurrentStock:F2} {material.Unit})");
+                }
+            }
+        }
+
+        if (insufficientMaterials.Any())
+        {
+            throw new InvalidOperationException($"Insufficient stock for materials:\n{string.Join("\n", insufficientMaterials)}");
+        }
+
+        // Deplete materials and log consumption
+        foreach (var requirement in materialRequirements)
+        {
+            var material = await _materialRepository.GetByIdAsync(requirement.Key);
+            if (material != null)
+            {
+                var quantityToDeplete = requirement.Value * order.Quantity;
+                material.CurrentStock -= quantityToDeplete;
+                await _materialRepository.UpdateAsync(material);
+
+                // Note: MaterialConsumptionLog creation would go here if we had a repository for it
+                // For now, we're focusing on the core depletion logic
+            }
+        }
+    }
+
+    private async Task CollectMaterialRequirementsAsync(IEnumerable<TemplatePart> parts, Dictionary<int, decimal> requirements)
+    {
+        foreach (var part in parts)
+        {
+            // If this part has a linked raw material, add its quantity
+            if (part.RawMaterialId.HasValue)
+            {
+                if (requirements.ContainsKey(part.RawMaterialId.Value))
+                {
+                    requirements[part.RawMaterialId.Value] += part.Quantity;
+                }
+                else
+                {
+                    requirements[part.RawMaterialId.Value] = part.Quantity;
                 }
             }
 
-            order.Status = OrderStatus.Completed;
-            order.CompletedDate = DateTime.UtcNow;
-            order.UpdatedAt = DateTime.UtcNow;
-            await _orderRepository.UpdateAsync(order);
+            // Recursively process children
+            if (part.Children != null && part.Children.Any())
+            {
+                await CollectMaterialRequirementsAsync(part.Children, requirements);
+            }
+        }
+    }
+
+    private async Task DepleteMaterialsFromProductBOMAsync(ProductionOrder order, Product product)
+    {
+        // Legacy method: Consume raw materials from ProductMaterials
+        foreach (var pm in product.ProductMaterials)
+        {
+            var material = await _materialRepository.GetByIdAsync(pm.RawMaterialId);
+            if (material != null)
+            {
+                var requiredQuantity = pm.QuantityRequired * order.Quantity;
+                material.CurrentStock -= requiredQuantity;
+                await _materialRepository.UpdateAsync(material);
+            }
         }
     }
 
