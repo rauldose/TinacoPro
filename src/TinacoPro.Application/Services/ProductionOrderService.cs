@@ -10,17 +10,20 @@ public class ProductionOrderService
     private readonly IProductRepository _productRepository;
     private readonly IRawMaterialRepository _materialRepository;
     private readonly IProductTemplateRepository _templateRepository;
+    private readonly IFinishedGoodRepository _finishedGoodRepository;
 
     public ProductionOrderService(
         IProductionOrderRepository orderRepository,
         IProductRepository productRepository,
         IRawMaterialRepository materialRepository,
-        IProductTemplateRepository templateRepository)
+        IProductTemplateRepository templateRepository,
+        IFinishedGoodRepository finishedGoodRepository)
     {
         _orderRepository = orderRepository;
         _productRepository = productRepository;
         _materialRepository = materialRepository;
         _templateRepository = templateRepository;
+        _finishedGoodRepository = finishedGoodRepository;
     }
 
     public async Task<IEnumerable<ProductionOrderDto>> GetAllOrdersAsync()
@@ -134,10 +137,33 @@ public class ProductionOrderService
             await DepleteMaterialsFromProductBOMAsync(order, product);
         }
 
+        // Create finished goods entry
+        await CreateFinishedGoodsAsync(order);
+
         order.Status = OrderStatus.Completed;
         order.CompletedDate = DateTime.UtcNow;
         order.UpdatedAt = DateTime.UtcNow;
         await _orderRepository.UpdateAsync(order);
+    }
+
+    private async Task CreateFinishedGoodsAsync(ProductionOrder order)
+    {
+        // Generate batch number
+        var batchNumber = $"BATCH-{DateTime.UtcNow:yyyyMMdd}-{order.OrderNumber}";
+
+        var finishedGood = new FinishedGood
+        {
+            ProductId = order.ProductId,
+            ProductionOrderId = order.Id,
+            Quantity = order.Quantity,
+            CurrentStock = order.Quantity,
+            ProductionDate = DateTime.UtcNow,
+            BatchNumber = batchNumber,
+            Notes = $"Produced from order {order.OrderNumber}",
+            CreatedAt = DateTime.UtcNow
+        };
+
+        await _finishedGoodRepository.AddAsync(finishedGood);
     }
 
     private async Task DepleteMaterialsFromTemplateAsync(ProductionOrder order, int templateId)
