@@ -23,6 +23,7 @@ public class TinacoProDbContext : DbContext
     public DbSet<ProductTemplate> ProductTemplates => Set<ProductTemplate>();
     public DbSet<TemplatePart> TemplateParts => Set<TemplatePart>();
     public DbSet<MaterialConsumptionLog> MaterialConsumptionLogs => Set<MaterialConsumptionLog>();
+    public DbSet<Shipment> Shipments => Set<Shipment>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
