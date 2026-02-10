@@ -1,0 +1,158 @@
+@page "/products"
+@rendermode InteractiveServer
+@using TinacoPro.Application.Services
+@using TinacoPro.Application.DTOs
+@inject ProductService ProductService
+
+<PageTitle>Products - TinacoPro</PageTitle>
+
+<MudText Typo="Typo.h4" Class="mb-4">Product Catalog</MudText>
+
+<MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" 
+           OnClick="ShowCreateForm" Class="mb-4">
+    New Product
+</MudButton>
+
+@if (products == null)
+{
+    <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+}
+else if (products.Any())
+{
+    <MudTable Items="@products" Hover="true" Striped="true" Dense="true" Elevation="2">
+        <HeaderContent>
+            <MudTh>Name</MudTh>
+            <MudTh>Model</MudTh>
+            <MudTh>Size</MudTh>
+            <MudTh>Capacity (L)</MudTh>
+            <MudTh>Status</MudTh>
+            <MudTh>Actions</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="Name">@context.Name</MudTd>
+            <MudTd DataLabel="Model">@context.Model</MudTd>
+            <MudTd DataLabel="Size">@context.Size</MudTd>
+            <MudTd DataLabel="Capacity">@context.Capacity</MudTd>
+            <MudTd DataLabel="Status">
+                <MudChip T="string" Color="@(context.IsActive ? Color.Success : Color.Default)" Size="Size.Small">
+                    @(context.IsActive ? "Active" : "Inactive")
+                </MudChip>
+            </MudTd>
+            <MudTd DataLabel="Actions">
+                <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Color="Color.Info"
+                               OnClick="@(() => ShowEditForm(context))" />
+            </MudTd>
+        </RowTemplate>
+    </MudTable>
+}
+else
+{
+    <MudAlert Severity="Severity.Info">No products found. Create your first product!</MudAlert>
+}
+
+<MudDialog @bind-Visible="showForm">
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            @(editingProduct == null ? "New Product" : "Edit Product")
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudTextField @bind-Value="formModel.Name" Label="Name" Variant="Variant.Outlined" Class="mb-3" Required="true" />
+        <MudTextField @bind-Value="formModel.Model" Label="Model" Variant="Variant.Outlined" Class="mb-3" Required="true" />
+        <MudTextField @bind-Value="formModel.Size" Label="Size" Variant="Variant.Outlined" Class="mb-3" />
+        <MudNumericField @bind-Value="formModel.Capacity" Label="Capacity (Liters)" Variant="Variant.Outlined" Class="mb-3" Min="0" />
+        <MudTextField @bind-Value="formModel.Description" Label="Description" Variant="Variant.Outlined" Lines="3" Class="mb-3" />
+        @if (editingProduct != null)
+        {
+            <MudSwitch T="bool" @bind-Checked="formModel.IsActive" Label="Active" Color="Color.Success" />
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="HideForm" Variant="Variant.Text">Cancel</MudButton>
+        <MudButton OnClick="SaveProduct" Variant="Variant.Filled" Color="Color.Primary">Save</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    private IEnumerable<ProductDto>? products;
+    private bool showForm = false;
+    private ProductDto? editingProduct;
+    private ProductFormModel formModel = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadProducts();
+    }
+
+    private async Task LoadProducts()
+    {
+        products = await ProductService.GetAllProductsAsync();
+    }
+
+    private void ShowCreateForm()
+    {
+        editingProduct = null;
+        formModel = new ProductFormModel();
+        showForm = true;
+    }
+
+    private void ShowEditForm(ProductDto product)
+    {
+        editingProduct = product;
+        formModel = new ProductFormModel
+        {
+            Name = product.Name,
+            Model = product.Model,
+            Size = product.Size,
+            Capacity = product.Capacity,
+            Description = product.Description,
+            IsActive = product.IsActive
+        };
+        showForm = true;
+    }
+
+    private void HideForm()
+    {
+        showForm = false;
+        editingProduct = null;
+    }
+
+    private async Task SaveProduct()
+    {
+        if (editingProduct == null)
+        {
+            var createDto = new CreateProductDto
+            {
+                Name = formModel.Name,
+                Model = formModel.Model,
+                Size = formModel.Size,
+                Capacity = formModel.Capacity,
+                Description = formModel.Description
+            };
+            await ProductService.CreateProductAsync(createDto);
+        }
+        else
+        {
+            editingProduct.Name = formModel.Name;
+            editingProduct.Model = formModel.Model;
+            editingProduct.Size = formModel.Size;
+            editingProduct.Capacity = formModel.Capacity;
+            editingProduct.Description = formModel.Description;
+            editingProduct.IsActive = formModel.IsActive;
+            await ProductService.UpdateProductAsync(editingProduct);
+        }
+        
+        HideForm();
+        await LoadProducts();
+    }
+
+    private class ProductFormModel
+    {
+        public string Name { get; set; } = string.Empty;
+        public string Model { get; set; } = string.Empty;
+        public string Size { get; set; } = string.Empty;
+        public decimal Capacity { get; set; }
+        public string Description { get; set; } = string.Empty;
+        public bool IsActive { get; set; } = true;
+    }
+}

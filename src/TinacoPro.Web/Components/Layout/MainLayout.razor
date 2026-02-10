@@ -1,0 +1,136 @@
+﻿@inherits LayoutComponentBase
+@inject IJSRuntime JS
+
+<MudThemeProvider Theme="@_theme" @bind-IsDarkMode="@_isDarkMode" />
+<MudPopoverProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
+
+<MudLayout>
+    <MudAppBar Elevation="1" Dense="true">
+        <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@((e) => DrawerToggle())" />
+        <MudText Typo="Typo.h6" Class="ml-3">TinacoPro</MudText>
+        <MudSpacer />
+        <MudTooltip Text="@(_isDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode")">
+            <MudIconButton Icon="@(_isDarkMode ? Icons.Material.Filled.LightMode : Icons.Material.Filled.DarkMode)" 
+                           Color="Color.Inherit" 
+                           OnClick="@ToggleTheme" />
+        </MudTooltip>
+        <MudTooltip Text="Language">
+            <MudMenu Icon="@Icons.Material.Filled.Language" Color="Color.Inherit">
+                <MudMenuItem OnClick="@(() => ChangeLanguage("en"))">
+                    <MudText>English</MudText>
+                </MudMenuItem>
+                <MudMenuItem OnClick="@(() => ChangeLanguage("es"))">
+                    <MudText>Español</MudText>
+                </MudMenuItem>
+            </MudMenu>
+        </MudTooltip>
+        <MudIconButton Icon="@Icons.Material.Filled.Info" Color="Color.Inherit" Href="https://learn.microsoft.com/aspnet/core/" Target="_blank" />
+    </MudAppBar>
+    <MudDrawer @bind-Open="@_drawerOpen" Elevation="2" ClipMode="DrawerClipMode.Always">
+        <NavMenu />
+    </MudDrawer>
+    <MudMainContent Class="mt-16 pa-4">
+        @Body
+    </MudMainContent>
+</MudLayout>
+
+@code {
+    private bool _drawerOpen = true;
+    private bool _isDarkMode = true;
+    private string _currentLanguage = "en";
+
+    private MudTheme _theme = new MudTheme()
+    {
+        PaletteDark = new PaletteDark()
+        {
+            Primary = "#60a5fa",
+            Secondary = "#c084fc",
+            Success = "#34d399",
+            Warning = "#fbbf24",
+            Error = "#f87171",
+            Info = "#22d3ee",
+            Background = "#09090b",
+            BackgroundGray = "#111214",
+            Surface = "#111214",
+            DrawerBackground = "#0a0a0b",
+            DrawerText = "#e5e5e5",
+            AppbarBackground = "#0a0a0b",
+            AppbarText = "#e5e5e5",
+            TextPrimary = "#e5e5e5",
+            TextSecondary = "#888888",
+            ActionDefault = "#e5e5e5",
+            ActionDisabled = "#666666",
+            Divider = "#222222",
+            DividerLight = "#1a1a1a",
+            LinesDefault = "#222222",
+            LinesInputs = "#222222",
+        },
+        PaletteLight = new PaletteLight()
+        {
+            Primary = "#1976d2",
+            Secondary = "#9c27b0",
+            Success = "#4caf50",
+            Warning = "#ff9800",
+            Error = "#f44336",
+            Info = "#2196f3",
+            Background = "#ffffff",
+            BackgroundGray = "#f5f5f5",
+            Surface = "#ffffff",
+            DrawerBackground = "#ffffff",
+            DrawerText = "#424242",
+            AppbarBackground = "#1976d2",
+            AppbarText = "#ffffff",
+            TextPrimary = "#212121",
+            TextSecondary = "#757575",
+            ActionDefault = "#757575",
+            ActionDisabled = "#bdbdbd",
+            Divider = "#e0e0e0",
+            DividerLight = "#f5f5f5",
+            LinesDefault = "#e0e0e0",
+            LinesInputs = "#bdbdbd",
+        }
+    };
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            // Load theme preference from localStorage
+            var storedTheme = await JS.InvokeAsync<string?>("localStorage.getItem", "theme");
+            if (storedTheme != null)
+            {
+                _isDarkMode = storedTheme == "dark";
+                StateHasChanged();
+            }
+
+            // Load language preference from localStorage
+            var storedLanguage = await JS.InvokeAsync<string?>("localStorage.getItem", "language");
+            if (!string.IsNullOrEmpty(storedLanguage))
+            {
+                _currentLanguage = storedLanguage;
+                StateHasChanged();
+            }
+        }
+    }
+
+    private async Task ToggleTheme()
+    {
+        _isDarkMode = !_isDarkMode;
+        await JS.InvokeVoidAsync("localStorage.setItem", "theme", _isDarkMode ? "dark" : "light");
+    }
+
+    private async Task ChangeLanguage(string language)
+    {
+        _currentLanguage = language;
+        await JS.InvokeVoidAsync("localStorage.setItem", "language", language);
+        // Reload page to apply language change
+        await JS.InvokeVoidAsync("location.reload");
+    }
+
+    private void DrawerToggle()
+    {
+        _drawerOpen = !_drawerOpen;
+    }
+}

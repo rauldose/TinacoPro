@@ -1,0 +1,257 @@
+@page "/raw-materials"
+@rendermode InteractiveServer
+@using TinacoPro.Application.Services
+@using TinacoPro.Application.DTOs
+@inject RawMaterialService MaterialService
+
+<PageTitle>Raw Materials - TinacoPro</PageTitle>
+
+<MudText Typo="Typo.h4" Class="mb-4">Raw Materials Inventory</MudText>
+
+<MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" 
+           OnClick="ShowCreateForm" Class="mb-4">
+    New Material
+</MudButton>
+
+@if (materials == null)
+{
+    <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+}
+else
+{
+    @if (materials.Any(m => m.IsLowStock && m.IsActive))
+    {
+        <MudAlert Severity="Severity.Warning" Class="mb-4" Icon="@Icons.Material.Filled.Warning">
+            <strong>Low Stock Alert:</strong> @materials.Count(m => m.IsLowStock && m.IsActive) material(s) are running low on stock!
+        </MudAlert>
+    }
+
+    @if (materials.Any())
+    {
+        <MudTable Items="@materials" Hover="true" Striped="true" Dense="true" Elevation="2">
+            <HeaderContent>
+                <MudTh>Name</MudTh>
+                <MudTh>Code</MudTh>
+                <MudTh>Category</MudTh>
+                <MudTh>Unit</MudTh>
+                <MudTh>Current Stock</MudTh>
+                <MudTh>Min Stock</MudTh>
+                <MudTh>Unit Cost</MudTh>
+                <MudTh>Status</MudTh>
+                <MudTh>Actions</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="Name">
+                    @context.Name
+                    @if (context.IsLowStock && context.IsActive)
+                    {
+                        <MudIcon Icon="@Icons.Material.Filled.Warning" Color="Color.Warning" Size="Size.Small" />
+                    }
+                </MudTd>
+                <MudTd DataLabel="Code">@context.Code</MudTd>
+                <MudTd DataLabel="Category">@context.Category</MudTd>
+                <MudTd DataLabel="Unit">@context.Unit</MudTd>
+                <MudTd DataLabel="Current Stock">
+                    <MudChip T="string" Size="Size.Small" Color="@(context.IsLowStock ? Color.Error : Color.Default)">
+                        @context.CurrentStock.ToString("N2")
+                    </MudChip>
+                </MudTd>
+                <MudTd DataLabel="Min Stock">@context.MinimumStock.ToString("N2")</MudTd>
+                <MudTd DataLabel="Unit Cost">$@context.UnitCost.ToString("N2")</MudTd>
+                <MudTd DataLabel="Status">
+                    <MudChip T="string" Color="@(context.IsActive ? Color.Success : Color.Default)" Size="Size.Small">
+                        @(context.IsActive ? "Active" : "Inactive")
+                    </MudChip>
+                </MudTd>
+                <MudTd DataLabel="Actions">
+                    <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Color="Color.Info"
+                                   OnClick="@(() => ShowEditForm(context))" Title="Edit" />
+                    <MudIconButton Icon="@Icons.Material.Filled.Add" Size="Size.Small" Color="Color.Success"
+                                   OnClick="@(() => ShowStockInForm(context))" Title="Stock In" />
+                    <MudIconButton Icon="@Icons.Material.Filled.Remove" Size="Size.Small" Color="Color.Warning"
+                                   OnClick="@(() => ShowStockOutForm(context))" Title="Stock Out" />
+                </MudTd>
+            </RowTemplate>
+        </MudTable>
+    }
+    else
+    {
+        <MudAlert Severity="Severity.Info">No materials found. Create your first material!</MudAlert>
+    }
+}
+
+<MudDialog @bind-Visible="showForm" Options="dialogOptions">
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            @(editingMaterial == null ? "New Material" : "Edit Material")
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudTextField @bind-Value="formModel.Name" Label="Name" Variant="Variant.Outlined" Class="mb-3" Required="true" />
+        <MudTextField @bind-Value="formModel.Code" Label="Code" Variant="Variant.Outlined" Class="mb-3" Required="true" />
+        <MudTextField @bind-Value="formModel.Unit" Label="Unit (kg, L, pcs)" Variant="Variant.Outlined" Class="mb-3" Required="true" />
+        <MudNumericField @bind-Value="formModel.MinimumStock" Label="Minimum Stock" Variant="Variant.Outlined" Class="mb-3" Min="0" />
+        <MudNumericField @bind-Value="formModel.UnitCost" Label="Unit Cost" Variant="Variant.Outlined" Class="mb-3" Min="0" Format="N2" />
+        @if (editingMaterial != null)
+        {
+            <MudSwitch T="bool" @bind-Checked="formModel.IsActive" Label="Active" Color="Color.Success" />
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="HideForm" Variant="Variant.Text">Cancel</MudButton>
+        <MudButton OnClick="SaveMaterial" Variant="Variant.Filled" Color="Color.Primary">Save</MudButton>
+    </DialogActions>
+</MudDialog>
+
+<MudDialog @bind-Visible="showStockForm" Options="dialogOptions">
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            @(isStockIn ? "Stock In" : "Stock Out") - @selectedMaterial?.Name
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudAlert Severity="Severity.Info" Class="mb-3">
+            Current Stock: <strong>@selectedMaterial?.CurrentStock.ToString("N2") @selectedMaterial?.Unit</strong>
+        </MudAlert>
+        <MudNumericField @bind-Value="stockQuantity" Label="Quantity" Variant="Variant.Outlined" Class="mb-3" Min="0" Required="true" />
+        <MudTextField @bind-Value="stockReason" Label="Reason" Variant="Variant.Outlined" Lines="2" />
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="HideStockForm" Variant="Variant.Text">Cancel</MudButton>
+        <MudButton OnClick="SaveStockMovement" Variant="Variant.Filled" Color="@(isStockIn ? Color.Success : Color.Warning)">
+            @(isStockIn ? "Add Stock" : "Remove Stock")
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    private IEnumerable<RawMaterialDto>? materials;
+    private bool showForm = false;
+    private bool showStockForm = false;
+    private bool isStockIn = true;
+    private RawMaterialDto? editingMaterial;
+    private RawMaterialDto? selectedMaterial;
+    private MaterialFormModel formModel = new();
+    private decimal stockQuantity = 0;
+    private string stockReason = string.Empty;
+    private DialogOptions dialogOptions = new() { MaxWidth = MaxWidth.Small, FullWidth = true };
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadMaterials();
+    }
+
+    private async Task LoadMaterials()
+    {
+        materials = await MaterialService.GetAllMaterialsAsync();
+    }
+
+    private void ShowCreateForm()
+    {
+        editingMaterial = null;
+        formModel = new MaterialFormModel();
+        showForm = true;
+    }
+
+    private void ShowEditForm(RawMaterialDto material)
+    {
+        editingMaterial = material;
+        formModel = new MaterialFormModel
+        {
+            Name = material.Name,
+            Code = material.Code,
+            Unit = material.Unit,
+            MinimumStock = material.MinimumStock,
+            UnitCost = material.UnitCost,
+            IsActive = material.IsActive
+        };
+        showForm = true;
+    }
+
+    private void HideForm()
+    {
+        showForm = false;
+        editingMaterial = null;
+    }
+
+    private async Task SaveMaterial()
+    {
+        if (editingMaterial == null)
+        {
+            var createDto = new CreateRawMaterialDto
+            {
+                Name = formModel.Name,
+                Code = formModel.Code,
+                Unit = formModel.Unit,
+                MinimumStock = formModel.MinimumStock,
+                UnitCost = formModel.UnitCost
+            };
+            await MaterialService.CreateMaterialAsync(createDto);
+        }
+        else
+        {
+            editingMaterial.Name = formModel.Name;
+            editingMaterial.Code = formModel.Code;
+            editingMaterial.Unit = formModel.Unit;
+            editingMaterial.MinimumStock = formModel.MinimumStock;
+            editingMaterial.UnitCost = formModel.UnitCost;
+            editingMaterial.IsActive = formModel.IsActive;
+            await MaterialService.UpdateMaterialAsync(editingMaterial);
+        }
+        
+        HideForm();
+        await LoadMaterials();
+    }
+
+    private void ShowStockInForm(RawMaterialDto material)
+    {
+        selectedMaterial = material;
+        isStockIn = true;
+        stockQuantity = 0;
+        stockReason = string.Empty;
+        showStockForm = true;
+    }
+
+    private void ShowStockOutForm(RawMaterialDto material)
+    {
+        selectedMaterial = material;
+        isStockIn = false;
+        stockQuantity = 0;
+        stockReason = string.Empty;
+        showStockForm = true;
+    }
+
+    private void HideStockForm()
+    {
+        showStockForm = false;
+        selectedMaterial = null;
+    }
+
+    private async Task SaveStockMovement()
+    {
+        if (selectedMaterial != null && stockQuantity > 0)
+        {
+            try
+            {
+                await MaterialService.AdjustStockAsync(selectedMaterial.Id, stockQuantity, isStockIn);
+                HideStockForm();
+                await LoadMaterials();
+            }
+            catch (InvalidOperationException)
+            {
+                // Keep dialog open and show error - stock quantity exceeds available stock
+                stockQuantity = selectedMaterial.CurrentStock;
+            }
+        }
+    }
+
+    private class MaterialFormModel
+    {
+        public string Name { get; set; } = string.Empty;
+        public string Code { get; set; } = string.Empty;
+        public string Unit { get; set; } = string.Empty;
+        public decimal MinimumStock { get; set; }
+        public decimal UnitCost { get; set; }
+        public bool IsActive { get; set; } = true;
+    }
+}

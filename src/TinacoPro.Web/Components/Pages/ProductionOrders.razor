@@ -1,0 +1,169 @@
+@page "/production-orders"
+@rendermode InteractiveServer
+@using TinacoPro.Application.Services
+@using TinacoPro.Application.DTOs
+@inject ProductionOrderService OrderService
+@inject ProductService ProductService
+
+<PageTitle>Production Orders - TinacoPro</PageTitle>
+
+<MudText Typo="Typo.h4" Class="mb-4">Production Orders</MudText>
+
+<MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" 
+           OnClick="ShowCreateForm" Class="mb-4">
+    New Production Order
+</MudButton>
+
+@if (orders == null)
+{
+    <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+}
+else if (orders.Any())
+{
+    <MudTable Items="@orders" Hover="true" Striped="true" Dense="true" Elevation="2">
+        <HeaderContent>
+            <MudTh>Order Number</MudTh>
+            <MudTh>Product</MudTh>
+            <MudTh>Quantity</MudTh>
+            <MudTh>Status</MudTh>
+            <MudTh>Order Date</MudTh>
+            <MudTh>Completed Date</MudTh>
+            <MudTh>Actions</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="Order Number">@context.OrderNumber</MudTd>
+            <MudTd DataLabel="Product">@context.ProductName</MudTd>
+            <MudTd DataLabel="Quantity">@context.Quantity</MudTd>
+            <MudTd DataLabel="Status">
+                @{
+                    var chipColor = context.Status switch
+                    {
+                        "Pending" => Color.Warning,
+                        "InProgress" => Color.Info,
+                        "Completed" => Color.Success,
+                        "Cancelled" => Color.Error,
+                        _ => Color.Default
+                    };
+                }
+                <MudChip T="string" Color="@chipColor" Size="Size.Small">@context.Status</MudChip>
+            </MudTd>
+            <MudTd DataLabel="Order Date">@context.OrderDate.ToString("yyyy-MM-dd")</MudTd>
+            <MudTd DataLabel="Completed Date">@(context.CompletedDate?.ToString("yyyy-MM-dd") ?? "-")</MudTd>
+            <MudTd DataLabel="Actions">
+                @if (context.Status == "Pending")
+                {
+                    <MudIconButton Icon="@Icons.Material.Filled.PlayArrow" Size="Size.Small" Color="Color.Info"
+                                   OnClick="@(() => StartOrder(context.Id))" Title="Start" />
+                }
+                @if (context.Status == "InProgress")
+                {
+                    <MudIconButton Icon="@Icons.Material.Filled.CheckCircle" Size="Size.Small" Color="Color.Success"
+                                   OnClick="@(() => CompleteOrder(context.Id))" Title="Complete" />
+                }
+                @if (context.Status == "Pending" || context.Status == "InProgress")
+                {
+                    <MudIconButton Icon="@Icons.Material.Filled.Cancel" Size="Size.Small" Color="Color.Error"
+                                   OnClick="@(() => CancelOrder(context.Id))" Title="Cancel" />
+                }
+            </MudTd>
+        </RowTemplate>
+    </MudTable>
+}
+else
+{
+    <MudAlert Severity="Severity.Info">No production orders found. Create your first order!</MudAlert>
+}
+
+<MudDialog @bind-Visible="showForm" Options="dialogOptions">
+    <TitleContent>
+        <MudText Typo="Typo.h6">New Production Order</MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudSelect @bind-Value="formModel.ProductId" Label="Product" Variant="Variant.Outlined" Class="mb-3" Required="true">
+            @if (products != null)
+            {
+                @foreach (var product in products)
+                {
+                    <MudSelectItem Value="@product.Id">@product.Name (@product.Model)</MudSelectItem>
+                }
+            }
+        </MudSelect>
+        <MudNumericField @bind-Value="formModel.Quantity" Label="Quantity" Variant="Variant.Outlined" Class="mb-3" Min="1" Required="true" />
+        <MudTextField @bind-Value="formModel.Notes" Label="Notes" Variant="Variant.Outlined" Lines="3" Class="mb-3" />
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="HideForm" Variant="Variant.Text">Cancel</MudButton>
+        <MudButton OnClick="SaveOrder" Variant="Variant.Filled" Color="Color.Primary">Create Order</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    private IEnumerable<ProductionOrderDto>? orders;
+    private IEnumerable<ProductDto>? products;
+    private bool showForm = false;
+    private OrderFormModel formModel = new();
+    private DialogOptions dialogOptions = new() { MaxWidth = MaxWidth.Small, FullWidth = true };
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadOrders();
+        products = await ProductService.GetAllProductsAsync();
+    }
+
+    private async Task LoadOrders()
+    {
+        orders = await OrderService.GetAllOrdersAsync();
+    }
+
+    private void ShowCreateForm()
+    {
+        formModel = new OrderFormModel();
+        showForm = true;
+    }
+
+    private void HideForm()
+    {
+        showForm = false;
+    }
+
+    private async Task SaveOrder()
+    {
+        if (formModel.ProductId > 0)
+        {
+            var createDto = new CreateProductionOrderDto
+            {
+                ProductId = formModel.ProductId,
+                Quantity = formModel.Quantity,
+                Notes = formModel.Notes
+            };
+            await OrderService.CreateOrderAsync(createDto);
+            HideForm();
+            await LoadOrders();
+        }
+    }
+
+    private async Task StartOrder(int orderId)
+    {
+        await OrderService.StartOrderAsync(orderId);
+        await LoadOrders();
+    }
+
+    private async Task CompleteOrder(int orderId)
+    {
+        await OrderService.CompleteOrderAsync(orderId);
+        await LoadOrders();
+    }
+
+    private async Task CancelOrder(int orderId)
+    {
+        await OrderService.CancelOrderAsync(orderId);
+        await LoadOrders();
+    }
+
+    private class OrderFormModel
+    {
+        public int ProductId { get; set; }
+        public int Quantity { get; set; } = 1;
+        public string Notes { get; set; } = string.Empty;
+    }
+}

@@ -1,0 +1,509 @@
+@page "/template-builder"
+@rendermode InteractiveServer
+@using TinacoPro.Application.Services
+@using TinacoPro.Application.DTOs
+@inject ProductTemplateService TemplateService
+@inject RawMaterialService MaterialService
+@inject ISnackbar Snackbar
+
+<MudContainer MaxWidth="MaxWidth.False" Class="pa-4">
+    <MudText Typo="Typo.h4" Class="mb-4">Product Template Builder</MudText>
+    
+    <MudGrid>
+        <!-- Left Panel: Template List -->
+        <MudItem xs="12" md="4">
+            <MudCard>
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudText Typo="Typo.h6">Templates</MudText>
+                    </CardHeaderContent>
+                    <CardHeaderActions>
+                        <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Small" 
+                                   OnClick="OpenNewTemplateDialog">New Template</MudButton>
+                    </CardHeaderActions>
+                </MudCardHeader>
+                <MudCardContent>
+                    @if (templates == null)
+                    {
+                        <MudProgressCircular Indeterminate="true" />
+                    }
+                    else if (!templates.Any())
+                    {
+                        <MudAlert Severity="Severity.Info">No templates yet. Create your first template!</MudAlert>
+                    }
+                    else
+                    {
+                        <MudList Clickable="true" T="string">
+                            @foreach (var template in templates)
+                            {
+                                <MudListItem OnClick="@(() => SelectTemplate(template))" 
+                                             Selected="@(selectedTemplate?.Id == template.Id)" T="string">
+                                    <div class="d-flex justify-space-between align-center">
+                                        <div>
+                                            <MudText Typo="Typo.body1">@template.Name</MudText>
+                                            <MudText Typo="Typo.caption">@template.ModelType</MudText>
+                                        </div>
+                                        <MudChip T="string" Size="Size.Small" Color="@(template.IsActive ? Color.Success : Color.Default)">
+                                            @(template.IsActive ? "Active" : "Inactive")
+                                        </MudChip>
+                                    </div>
+                                </MudListItem>
+                            }
+                        </MudList>
+                    }
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+
+        <!-- Right Panel: Template Details and Parts -->
+        <MudItem xs="12" md="8">
+            @if (selectedTemplate != null)
+            {
+                <MudCard>
+                    <MudCardHeader>
+                        <CardHeaderContent>
+                            <MudText Typo="Typo.h6">@selectedTemplate.Name</MudText>
+                            <MudText Typo="Typo.body2" Color="Color.Secondary">@selectedTemplate.ModelType</MudText>
+                        </CardHeaderContent>
+                        <CardHeaderActions>
+                            <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Primary" 
+                                           OnClick="OpenEditTemplateDialog" Size="Size.Small" />
+                            <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" 
+                                           OnClick="DeleteTemplate" Size="Size.Small" />
+                        </CardHeaderActions>
+                    </MudCardHeader>
+                    <MudCardContent>
+                        <MudText Typo="Typo.body2" Class="mb-3">@selectedTemplate.Description</MudText>
+                        
+                        <MudDivider Class="my-3" />
+                        
+                        <MudText Typo="Typo.h6" Class="mb-2">Cost Summary</MudText>
+                        <MudGrid>
+                            <MudItem xs="6" sm="3">
+                                <MudText Typo="Typo.caption">Material Cost</MudText>
+                                <MudText Typo="Typo.body1" Color="Color.Primary">
+                                    $@selectedTemplate.TotalMaterialCost.ToString("F2")
+                                </MudText>
+                            </MudItem>
+                            <MudItem xs="6" sm="3">
+                                <MudText Typo="Typo.caption">Labor Cost</MudText>
+                                <MudText Typo="Typo.body1" Color="Color.Secondary">
+                                    $@selectedTemplate.TotalLaborCost.ToString("F2")
+                                </MudText>
+                            </MudItem>
+                            <MudItem xs="6" sm="3">
+                                <MudText Typo="Typo.caption">Est. Time</MudText>
+                                <MudText Typo="Typo.body1">
+                                    @selectedTemplate.TotalEstimatedMinutes min
+                                </MudText>
+                            </MudItem>
+                            <MudItem xs="6" sm="3">
+                                <MudText Typo="Typo.caption">Total Cost</MudText>
+                                <MudText Typo="Typo.h6" Color="Color.Success">
+                                    $@((selectedTemplate.TotalMaterialCost + selectedTemplate.TotalLaborCost).ToString("F2"))
+                                </MudText>
+                            </MudItem>
+                        </MudGrid>
+
+                        <MudDivider Class="my-3" />
+
+                        <div class="d-flex justify-space-between align-center mb-2">
+                            <MudText Typo="Typo.h6">Parts</MudText>
+                            <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Small" 
+                                       StartIcon="@Icons.Material.Filled.Add" OnClick="OpenNewPartDialog">
+                                Add Part
+                            </MudButton>
+                        </div>
+
+                        @if (selectedTemplate.RootParts == null || !selectedTemplate.RootParts.Any())
+                        {
+                            <MudAlert Severity="Severity.Info">No parts yet. Add parts to build your template!</MudAlert>
+                        }
+                        else
+                        {
+                            <MudPaper Class="pa-2">
+                                @foreach (var part in selectedTemplate.RootParts.OrderBy(p => p.Position))
+                                {
+                                    <RenderPart Part="@part" />
+                                }
+                            </MudPaper>
+                        }
+                    </MudCardContent>
+                </MudCard>
+            }
+            else
+            {
+                <MudCard>
+                    <MudCardContent>
+                        <MudText Typo="Typo.body1" Align="Align.Center" Color="Color.Secondary">
+                            Select a template from the list to view details
+                        </MudText>
+                    </MudCardContent>
+                </MudCard>
+            }
+        </MudItem>
+    </MudGrid>
+</MudContainer>
+
+<!-- Template Dialog -->
+<MudDialog @bind-Visible="showTemplateDialog">
+    <TitleContent>
+        <MudText Typo="Typo.h6">@(editingTemplate?.Id > 0 ? "Edit Template" : "New Template")</MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudTextField @bind-Value="editingTemplate.Name" Label="Template Name" Required="true" />
+        <MudTextField @bind-Value="editingTemplate.ModelType" Label="Model Type" Required="true" Class="mt-3" />
+        <MudTextField @bind-Value="editingTemplate.Description" Label="Description" Lines="3" Class="mt-3" />
+        <MudSwitch @bind-Value="editingTemplate.IsActive" Label="Active" Color="Color.Success" Class="mt-3" />
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="@(() => showTemplateDialog = false)">Cancel</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SaveTemplate">Save</MudButton>
+    </DialogActions>
+</MudDialog>
+
+<!-- Part Dialog -->
+<MudDialog @bind-Visible="showPartDialog">
+    <TitleContent>
+        <MudText Typo="Typo.h6">@(editingPart?.Id > 0 ? "Edit Part" : "Add Part")</MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudSelect @bind-Value="editingPart.ParentPartId" Label="Parent Part" T="int?" Clearable="true">
+            <MudSelectItem T="int?" Value="null">None (Root Level)</MudSelectItem>
+            @foreach (var part in GetAvailableParentParts())
+            {
+                <MudSelectItem T="int?" Value="@part.Id">@part.Name</MudSelectItem>
+            }
+        </MudSelect>
+
+        <MudSelect @bind-Value="editingPart.PartType" Label="Part Type" Required="true" Class="mt-3">
+            <MudSelectItem Value="@("Assembly")">Assembly</MudSelectItem>
+            <MudSelectItem Value="@("Material")">Material</MudSelectItem>
+            <MudSelectItem Value="@("Component")">Component</MudSelectItem>
+            <MudSelectItem Value="@("Process")">Process</MudSelectItem>
+        </MudSelect>
+
+        <MudTextField @bind-Value="editingPart.Name" Label="Part Name" Required="true" Class="mt-3" />
+
+        @if (editingPart.PartType == "Material")
+        {
+            <MudSelect @bind-Value="editingPart.RawMaterialId" Label="Material" T="int?" Clearable="true" Class="mt-3">
+                @foreach (var material in materials)
+                {
+                    <MudSelectItem T="int?" Value="@material.Id">@material.Name (@material.Code)</MudSelectItem>
+                }
+            </MudSelect>
+        }
+
+        <MudNumericField @bind-Value="editingPart.Quantity" Label="Quantity" T="decimal" Min="0" Class="mt-3" />
+        <MudTextField @bind-Value="editingPart.Unit" Label="Unit" Placeholder="kg, pcs, liters" Class="mt-3" />
+        <MudNumericField @bind-Value="editingPart.UnitCost" Label="Unit Cost ($)" T="decimal" Min="0" Format="F2" Class="mt-3" />
+        <MudNumericField @bind-Value="editingPart.LaborCost" Label="Labor Cost ($)" T="decimal" Min="0" Format="F2" Class="mt-3" />
+        <MudNumericField @bind-Value="editingPart.EstimatedMinutes" Label="Estimated Minutes" T="int" Min="0" Class="mt-3" />
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="@(() => showPartDialog = false)">Cancel</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SavePart">Save</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    private List<ProductTemplateDto> templates = new();
+    private List<RawMaterialDto> materials = new();
+    private ProductTemplateDto? selectedTemplate;
+    private ProductTemplateDto editingTemplate = new();
+    private TemplatePartDto editingPart = new();
+    private bool showTemplateDialog;
+    private bool showPartDialog;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        templates = (await TemplateService.GetAllTemplatesAsync()).ToList();
+        materials = (await MaterialService.GetAllMaterialsAsync()).ToList();
+    }
+
+    private async Task SelectTemplate(ProductTemplateDto template)
+    {
+        selectedTemplate = await TemplateService.GetTemplateByIdAsync(template.Id);
+        StateHasChanged();
+    }
+
+    private void OpenNewTemplateDialog()
+    {
+        editingTemplate = new ProductTemplateDto { IsActive = true };
+        showTemplateDialog = true;
+    }
+
+    private void OpenEditTemplateDialog()
+    {
+        if (selectedTemplate != null)
+        {
+            editingTemplate = new ProductTemplateDto
+            {
+                Id = selectedTemplate.Id,
+                Name = selectedTemplate.Name,
+                ModelType = selectedTemplate.ModelType,
+                Description = selectedTemplate.Description,
+                IsActive = selectedTemplate.IsActive
+            };
+            showTemplateDialog = true;
+        }
+    }
+
+    private async Task SaveTemplate()
+    {
+        try
+        {
+            if (editingTemplate.Id > 0)
+            {
+                await TemplateService.UpdateTemplateAsync(editingTemplate);
+                Snackbar.Add("Template updated successfully", Severity.Success);
+            }
+            else
+            {
+                await TemplateService.CreateTemplateAsync(editingTemplate);
+                Snackbar.Add("Template created successfully", Severity.Success);
+            }
+
+            showTemplateDialog = false;
+            await LoadData();
+
+            if (selectedTemplate != null)
+            {
+                selectedTemplate = await TemplateService.GetTemplateByIdAsync(selectedTemplate.Id);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private async Task DeleteTemplate()
+    {
+        if (selectedTemplate != null)
+        {
+            try
+            {
+                await TemplateService.DeleteTemplateAsync(selectedTemplate.Id);
+                Snackbar.Add("Template deleted successfully", Severity.Success);
+                selectedTemplate = null;
+                await LoadData();
+            }
+            catch (Exception ex)
+            {
+                Snackbar.Add($"Error: {ex.Message}", Severity.Error);
+            }
+        }
+    }
+
+    private void OpenNewPartDialog()
+    {
+        if (selectedTemplate != null)
+        {
+            editingPart = new TemplatePartDto
+            {
+                ProductTemplateId = selectedTemplate.Id,
+                Quantity = 1,
+                Position = CountAllParts(selectedTemplate.RootParts) + 1
+            };
+            showPartDialog = true;
+        }
+    }
+
+    private int CountAllParts(List<TemplatePartDto> parts)
+    {
+        int count = parts?.Count ?? 0;
+        foreach (var part in parts ?? Enumerable.Empty<TemplatePartDto>())
+        {
+            count += CountAllParts(part.Children);
+        }
+        return count;
+    }
+
+    private void OpenEditPartDialog(TemplatePartDto part)
+    {
+        editingPart = new TemplatePartDto
+        {
+            Id = part.Id,
+            ProductTemplateId = part.ProductTemplateId,
+            ParentPartId = part.ParentPartId,
+            Name = part.Name,
+            PartType = part.PartType,
+            Quantity = part.Quantity,
+            Unit = part.Unit,
+            UnitCost = part.UnitCost,
+            LaborCost = part.LaborCost,
+            EstimatedMinutes = part.EstimatedMinutes,
+            RawMaterialId = part.RawMaterialId,
+            Position = part.Position
+        };
+        showPartDialog = true;
+    }
+
+    private async Task SavePart()
+    {
+        try
+        {
+            if (editingPart.Id > 0)
+            {
+                await TemplateService.UpdatePartAsync(editingPart);
+                Snackbar.Add("Part updated successfully", Severity.Success);
+            }
+            else
+            {
+                await TemplateService.AddPartAsync(editingPart);
+                Snackbar.Add("Part added successfully", Severity.Success);
+            }
+
+            showPartDialog = false;
+
+            if (selectedTemplate != null)
+            {
+                selectedTemplate = await TemplateService.GetTemplateByIdAsync(selectedTemplate.Id);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private async Task DeletePart(int partId)
+    {
+        try
+        {
+            await TemplateService.DeletePartAsync(partId);
+            Snackbar.Add("Part deleted successfully", Severity.Success);
+
+            if (selectedTemplate != null)
+            {
+                selectedTemplate = await TemplateService.GetTemplateByIdAsync(selectedTemplate.Id);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private List<TemplatePartDto> GetAvailableParentParts()
+    {
+        if (selectedTemplate?.RootParts == null) return new List<TemplatePartDto>();
+
+        var allParts = new List<TemplatePartDto>();
+        CollectAllParts(selectedTemplate.RootParts, allParts);
+
+        // Filter out the part being edited (can't be its own parent)
+        return allParts
+            .Where(p => p.Id != editingPart.Id)
+            .OrderBy(p => p.Name)
+            .ToList();
+    }
+
+    private void CollectAllParts(List<TemplatePartDto> parts, List<TemplatePartDto> collection)
+    {
+        foreach (var part in parts ?? Enumerable.Empty<TemplatePartDto>())
+        {
+            collection.Add(part);
+            CollectAllParts(part.Children, collection);
+        }
+    }
+
+    private RenderFragment<TemplatePartDto> RenderPart => part => builder =>
+    {
+        string icon = part.PartType switch
+        {
+            "Assembly" => Icons.Material.Filled.AccountTree,
+            "Material" => Icons.Material.Filled.Science,
+            "Component" => Icons.Material.Filled.Build,
+            "Process" => Icons.Material.Filled.Settings,
+            _ => Icons.Material.Filled.Circle
+        };
+
+        builder.OpenElement(0, "div");
+        builder.AddAttribute(1, "class", "mb-2");
+
+        builder.OpenComponent<MudPaper>(2);
+        builder.AddAttribute(3, "Class", "pa-2 mb-1");
+        builder.AddAttribute(4, "Elevation", 1);
+        builder.AddAttribute(5, "ChildContent", (RenderFragment)(contentBuilder =>
+        {
+            contentBuilder.OpenElement(0, "div");
+            contentBuilder.AddAttribute(1, "class", "d-flex justify-space-between align-center");
+
+            // Left side: Part info
+            contentBuilder.OpenElement(2, "div");
+            contentBuilder.AddAttribute(3, "class", "d-flex align-center");
+
+            contentBuilder.OpenComponent<MudIcon>(4);
+            contentBuilder.AddAttribute(5, "Icon", icon);
+            contentBuilder.AddAttribute(6, "Size", Size.Small);
+            contentBuilder.AddAttribute(7, "Class", "mr-2");
+            contentBuilder.CloseComponent();
+
+            contentBuilder.OpenElement(8, "div");
+            contentBuilder.OpenComponent<MudText>(9);
+            contentBuilder.AddAttribute(10, "Typo", Typo.body2);
+            contentBuilder.AddAttribute(11, "ChildContent", (RenderFragment)(b => b.AddContent(0, $"{part.Name}")));
+            contentBuilder.CloseComponent();
+
+            contentBuilder.OpenComponent<MudText>(12);
+            contentBuilder.AddAttribute(13, "Typo", Typo.caption);
+            contentBuilder.AddAttribute(14, "Color", Color.Secondary);
+            contentBuilder.AddAttribute(15, "ChildContent", (RenderFragment)(b =>
+            {
+                b.AddContent(0, $"{part.PartType} | {part.Quantity} {part.Unit}");
+                if (part.UnitCost > 0 || part.LaborCost > 0)
+                {
+                    b.AddContent(1, $" | ${(part.UnitCost * part.Quantity + part.LaborCost):F2}");
+                }
+            }));
+            contentBuilder.CloseComponent();
+
+            contentBuilder.CloseElement(); // div
+            contentBuilder.CloseElement(); // d-flex
+
+            // Right side: Actions
+            contentBuilder.OpenElement(16, "div");
+            contentBuilder.OpenComponent<MudIconButton>(17);
+            contentBuilder.AddAttribute(18, "Icon", Icons.Material.Filled.Edit);
+            contentBuilder.AddAttribute(19, "Size", Size.Small);
+            contentBuilder.AddAttribute(20, "OnClick", EventCallback.Factory.Create(this, () => OpenEditPartDialog(part)));
+            contentBuilder.CloseComponent();
+
+            contentBuilder.OpenComponent<MudIconButton>(21);
+            contentBuilder.AddAttribute(22, "Icon", Icons.Material.Filled.Delete);
+            contentBuilder.AddAttribute(23, "Size", Size.Small);
+            contentBuilder.AddAttribute(24, "Color", Color.Error);
+            contentBuilder.AddAttribute(25, "OnClick", EventCallback.Factory.Create(this, () => DeletePart(part.Id)));
+            contentBuilder.CloseComponent();
+
+            contentBuilder.CloseElement(); // div
+
+            contentBuilder.CloseElement(); // d-flex
+        }));
+        builder.CloseComponent(); // MudPaper
+
+        // Render children with indentation
+        if (part.Children?.Any() == true)
+        {
+            builder.OpenElement(26, "div");
+            builder.AddAttribute(27, "style", "margin-left: 20px; border-left: 2px solid var(--mud-palette-divider); padding-left: 8px;");
+            
+            foreach (var child in part.Children.OrderBy(c => c.Position))
+            {
+                builder.AddContent(28, RenderPart(child));
+            }
+            
+            builder.CloseElement(); // div
+        }
+
+        builder.CloseElement(); // div
+    };
+}

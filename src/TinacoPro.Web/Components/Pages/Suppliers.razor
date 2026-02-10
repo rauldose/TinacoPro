@@ -1,0 +1,173 @@
+@page "/suppliers"
+@rendermode InteractiveServer
+@using TinacoPro.Application.Services
+@using TinacoPro.Application.DTOs
+@inject SupplierService SupplierService
+
+<PageTitle>Suppliers - TinacoPro</PageTitle>
+
+<MudText Typo="Typo.h4" Class="mb-4">Suppliers</MudText>
+
+<MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" 
+           OnClick="ShowCreateForm" Class="mb-4">
+    New Supplier
+</MudButton>
+
+@if (suppliers == null)
+{
+    <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+}
+else if (suppliers.Any())
+{
+    <MudGrid>
+        @foreach (var supplier in suppliers)
+        {
+            <MudItem xs="12" sm="6" md="4">
+                <MudCard Elevation="2">
+                    <MudCardHeader>
+                        <CardHeaderContent>
+                            <MudText Typo="Typo.h6">@supplier.Name</MudText>
+                            <MudChip T="string" Size="Size.Small" Color="@(supplier.IsActive ? Color.Success : Color.Default)">
+                                @(supplier.IsActive ? "Active" : "Inactive")
+                            </MudChip>
+                        </CardHeaderContent>
+                    </MudCardHeader>
+                    <MudCardContent>
+                        <MudText Typo="Typo.body2" Class="mb-2">
+                            <MudIcon Icon="@Icons.Material.Filled.Person" Size="Size.Small" /> 
+                            <strong>Contact:</strong> @supplier.ContactName
+                        </MudText>
+                        <MudText Typo="Typo.body2" Class="mb-2">
+                            <MudIcon Icon="@Icons.Material.Filled.Phone" Size="Size.Small" /> 
+                            <strong>Phone:</strong> @supplier.Phone
+                        </MudText>
+                        <MudText Typo="Typo.body2" Class="mb-2">
+                            <MudIcon Icon="@Icons.Material.Filled.Email" Size="Size.Small" /> 
+                            <strong>Email:</strong> @supplier.Email
+                        </MudText>
+                        <MudText Typo="Typo.body2">
+                            <MudIcon Icon="@Icons.Material.Filled.LocationOn" Size="Size.Small" /> 
+                            <strong>Address:</strong> @supplier.Address
+                        </MudText>
+                    </MudCardContent>
+                    <MudCardActions>
+                        <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Info"
+                                       OnClick="@(() => ShowEditForm(supplier))" Title="Edit" />
+                    </MudCardActions>
+                </MudCard>
+            </MudItem>
+        }
+    </MudGrid>
+}
+else
+{
+    <MudAlert Severity="Severity.Info">No suppliers found. Create your first supplier!</MudAlert>
+}
+
+<MudDialog @bind-Visible="showForm" Options="dialogOptions">
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            @(editingSupplier == null ? "New Supplier" : "Edit Supplier")
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudTextField @bind-Value="formModel.Name" Label="Company Name" Variant="Variant.Outlined" Class="mb-3" Required="true" />
+        <MudTextField @bind-Value="formModel.ContactName" Label="Contact Name" Variant="Variant.Outlined" Class="mb-3" Required="true" />
+        <MudTextField @bind-Value="formModel.Phone" Label="Phone" Variant="Variant.Outlined" Class="mb-3" />
+        <MudTextField @bind-Value="formModel.Email" Label="Email" Variant="Variant.Outlined" Class="mb-3" InputType="InputType.Email" />
+        <MudTextField @bind-Value="formModel.Address" Label="Address" Variant="Variant.Outlined" Lines="3" Class="mb-3" />
+        @if (editingSupplier != null)
+        {
+            <MudSwitch T="bool" @bind-Checked="formModel.IsActive" Label="Active" Color="Color.Success" />
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="HideForm" Variant="Variant.Text">Cancel</MudButton>
+        <MudButton OnClick="SaveSupplier" Variant="Variant.Filled" Color="Color.Primary">Save</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    private IEnumerable<SupplierDto>? suppliers;
+    private bool showForm = false;
+    private SupplierDto? editingSupplier;
+    private SupplierFormModel formModel = new();
+    private DialogOptions dialogOptions = new() { MaxWidth = MaxWidth.Small, FullWidth = true };
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadSuppliers();
+    }
+
+    private async Task LoadSuppliers()
+    {
+        suppliers = await SupplierService.GetAllSuppliersAsync();
+    }
+
+    private void ShowCreateForm()
+    {
+        editingSupplier = null;
+        formModel = new SupplierFormModel();
+        showForm = true;
+    }
+
+    private void ShowEditForm(SupplierDto supplier)
+    {
+        editingSupplier = supplier;
+        formModel = new SupplierFormModel
+        {
+            Name = supplier.Name,
+            ContactName = supplier.ContactName,
+            Phone = supplier.Phone,
+            Email = supplier.Email,
+            Address = supplier.Address,
+            IsActive = supplier.IsActive
+        };
+        showForm = true;
+    }
+
+    private void HideForm()
+    {
+        showForm = false;
+        editingSupplier = null;
+    }
+
+    private async Task SaveSupplier()
+    {
+        if (editingSupplier == null)
+        {
+            var createDto = new CreateSupplierDto
+            {
+                Name = formModel.Name,
+                ContactName = formModel.ContactName,
+                Phone = formModel.Phone,
+                Email = formModel.Email,
+                Address = formModel.Address
+            };
+            await SupplierService.CreateSupplierAsync(createDto);
+        }
+        else
+        {
+            editingSupplier.Name = formModel.Name;
+            editingSupplier.ContactName = formModel.ContactName;
+            editingSupplier.Phone = formModel.Phone;
+            editingSupplier.Email = formModel.Email;
+            editingSupplier.Address = formModel.Address;
+            editingSupplier.IsActive = formModel.IsActive;
+            await SupplierService.UpdateSupplierAsync(editingSupplier);
+        }
+        
+        HideForm();
+        await LoadSuppliers();
+    }
+
+    private class SupplierFormModel
+    {
+        public string Name { get; set; } = string.Empty;
+        public string ContactName { get; set; } = string.Empty;
+        public string Phone { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
+        public string Address { get; set; } = string.Empty;
+        public bool IsActive { get; set; } = true;
+    }
+}
