@@ -188,7 +188,7 @@ public class ProductionOrderService
         var materials = await _materialRepository.GetAllAsync();
         foreach (var material in materials.Where(m => m.IsActive && m.CurrentStock <= m.MinimumStock))
         {
-            warnings.Add($"{material.Name}: {material.CurrentStock:F1} {material.Unit} ({material.MinimumStock:F1} {material.Unit} min)");
+            warnings.Add($"{material.Name}: {material.CurrentStock:F1} {material.Unit} (min: {material.MinimumStock:F1} {material.Unit})");
         }
         return warnings;
     }
