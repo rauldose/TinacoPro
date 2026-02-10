@@ -15,12 +15,12 @@
 <MudPaper Class="pa-4 mb-4" Elevation="2">
     <MudGrid>
         <MudItem xs="12" sm="6" md="3">
-            <MudSelect @bind-Value="selectedStatus" Label="Filter by Status" Variant="Variant.Outlined" Clearable="true">
-                <MudSelectItem Value="@((ShipmentStatus?)null)">All Statuses</MudSelectItem>
-                <MudSelectItem Value="@ShipmentStatus.Pending">Pending</MudSelectItem>
-                <MudSelectItem Value="@ShipmentStatus.InTransit">In Transit</MudSelectItem>
-                <MudSelectItem Value="@ShipmentStatus.Delivered">Delivered</MudSelectItem>
-                <MudSelectItem Value="@ShipmentStatus.Cancelled">Cancelled</MudSelectItem>
+            <MudSelect @bind-Value="selectedStatusString" Label="Filter by Status" Variant="Variant.Outlined" Clearable="true" T="string">
+                <MudSelectItem T="string" Value="@((string?)null)">All Statuses</MudSelectItem>
+                <MudSelectItem T="string" Value="@("Pending")">Pending</MudSelectItem>
+                <MudSelectItem T="string" Value="@("InTransit")">In Transit</MudSelectItem>
+                <MudSelectItem T="string" Value="@("Delivered")">Delivered</MudSelectItem>
+                <MudSelectItem T="string" Value="@("Cancelled")">Cancelled</MudSelectItem>
             </MudSelect>
         </MudItem>
         <MudItem xs="12" sm="6" md="3">
@@ -148,7 +148,7 @@ else
     private IEnumerable<ShipmentDto>? shipments;
     private IEnumerable<ProductDto>? products;
     private IEnumerable<FinishedGoodsDto>? finishedGoods;
-    private ShipmentStatus? selectedStatus;
+    private string? selectedStatusString;
     private bool showShipmentDialog;
     private CreateShipmentDto editingShipment = new();
     private int editingShipmentId = 0;
@@ -160,8 +160,8 @@ else
         get
         {
             if (shipments == null) return Enumerable.Empty<ShipmentDto>();
-            if (!selectedStatus.HasValue) return shipments;
-            return shipments.Where(s => s.Status == selectedStatus.ToString());
+            if (string.IsNullOrWhiteSpace(selectedStatusString)) return shipments;
+            return shipments.Where(s => s.Status == selectedStatusString);
         }
     }
 
