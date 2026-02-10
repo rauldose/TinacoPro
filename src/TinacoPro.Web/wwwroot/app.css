@@ -20,63 +20,71 @@
 
 html, body {
     font-family: 'Segoe UI', 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif;
-    background: var(--bg-primary) !important;
-    color: var(--text-primary);
     margin: 0;
     padding: 0;
 }
 
-/* Force dark theme on MudBlazor main content */
-.mud-main-content {
-    background-color: var(--bg-primary) !important;
-    color: var(--text-primary) !important;
+/* Dark theme specific styles */
+.mud-theme-dark html,
+.mud-theme-dark body,
+body.mud-theme-dark {
+    background: var(--bg-primary);
+    color: var(--text-primary);
 }
 
-/* Force dark theme on all page surfaces */
-.mud-layout,
-.mud-layout > *,
-body .mud-layout {
-    background-color: var(--bg-primary) !important;
+.mud-theme-dark .mud-main-content {
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
 }
 
-/* MudBlazor container and content areas */
+.mud-theme-dark .mud-layout {
+    background-color: var(--bg-primary);
+}
+
+.mud-theme-dark .mud-paper,
+.mud-theme-dark .mud-card {
+    background-color: var(--bg-secondary);
+    color: var(--text-primary);
+}
+
+.mud-theme-dark .mud-table {
+    background-color: var(--bg-secondary);
+}
+
+.mud-theme-dark .mud-table-cell {
+    color: var(--text-primary);
+}
+
+.mud-theme-dark .mud-dialog-container,
+.mud-theme-dark .mud-dialog {
+    background-color: var(--bg-secondary);
+    color: var(--text-primary);
+}
+
+/* Light theme specific styles */
+.mud-theme-light html,
+.mud-theme-light body,
+body.mud-theme-light {
+    background: #ffffff;
+    color: #212121;
+}
+
+.mud-theme-light .mud-main-content {
+    background-color: #f5f5f5;
+    color: #212121;
+}
+
+.mud-theme-light .mud-layout {
+    background-color: #f5f5f5;
+}
+
+/* Ensure theme-agnostic containers are transparent */
 .mud-container,
 .mud-container-maxwidth-false,
 .mud-grid,
 article,
 .page {
-    background-color: transparent !important;
-    color: var(--text-primary) !important;
-}
-
-/* Ensure dialogs and modals use dark theme */
-.mud-dialog-container,
-.mud-dialog,
-.mud-paper {
-    background-color: var(--bg-secondary) !important;
-    color: var(--text-primary) !important;
-}
-
-/* MudBlazor specific overrides for dark theme */
-.mud-theme-dark .mud-main-content,
-.mud-theme-dark,
-body.mud-theme-dark {
-    background-color: var(--bg-primary) !important;
-}
-
-/* Override any MudBlazor default backgrounds */
-.mud-theme-dark .mud-paper,
-.mud-theme-dark .mud-card {
-    background-color: var(--bg-secondary) !important;
-}
-
-/* Fix table backgrounds in dark mode */
-.mud-theme-dark .mud-table {
-    background-color: var(--bg-secondary) !important;
-}
-
-.mud-theme-dark .mud-table-cell {
-    color: var(--text-primary) !important;
+    background-color: transparent;
 }
 
 /* Scrollbar Styling */

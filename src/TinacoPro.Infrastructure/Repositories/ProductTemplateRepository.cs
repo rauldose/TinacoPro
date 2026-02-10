@@ -19,6 +19,7 @@ public class ProductTemplateRepository : IProductTemplateRepository
         return await _context.ProductTemplates
             .Include(t => t.Parts)
             .Include(t => t.Products)
+            .AsSplitQuery() // Avoid cartesian explosion warning
             .OrderBy(t => t.Name)
             .ToListAsync();
     }
@@ -28,6 +29,7 @@ public class ProductTemplateRepository : IProductTemplateRepository
         return await _context.ProductTemplates
             .Include(t => t.Parts)
             .Include(t => t.Products)
+            .AsSplitQuery() // Avoid cartesian explosion warning
             .FirstOrDefaultAsync(t => t.Id == id);
     }
 
@@ -70,6 +72,7 @@ public class ProductTemplateRepository : IProductTemplateRepository
         return await _context.TemplateParts
             .Include(p => p.Children)
             .Include(p => p.RawMaterial)
+            .AsSplitQuery() // Avoid cartesian explosion warning
             .Where(p => p.TemplateId == templateId && p.ParentPartId == null)
             .OrderBy(p => p.Position)
             .ToListAsync();
@@ -80,6 +83,7 @@ public class ProductTemplateRepository : IProductTemplateRepository
         return await _context.TemplateParts
             .Include(p => p.Children)
             .Include(p => p.RawMaterial)
+            .AsSplitQuery() // Avoid cartesian explosion warning
             .Where(p => p.ParentPartId == parentPartId)
             .OrderBy(p => p.Position)
             .ToListAsync();
@@ -91,6 +95,7 @@ public class ProductTemplateRepository : IProductTemplateRepository
             .Include(p => p.ParentPart)
             .Include(p => p.Children)
             .Include(p => p.RawMaterial)
+            .AsSplitQuery() // Avoid cartesian explosion warning
             .FirstOrDefaultAsync(p => p.Id == partId);
     }
 
