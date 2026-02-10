@@ -233,6 +233,9 @@ public class LocalizationService
                 ["ShipmentCreated"] = "Shipment created successfully",
                 ["ShipmentCancelled"] = "Shipment cancelled successfully",
                 ["ShipmentStatusUpdated"] = "Shipment status updated",
+                ["FinishedGoodBatch"] = "Finished Good Batch",
+                ["AutoSelectBatchHelp"] = "Leave empty to auto-deplete from oldest batches",
+                ["Available"] = "Available",
                 // Reports page
                 ["ReportsAnalytics"] = "Reports & Analytics",
                 ["ReportDesigner"] = "Report Designer",
@@ -487,6 +490,9 @@ public class LocalizationService
                 ["ShipmentCreated"] = "Envío creado exitosamente",
                 ["ShipmentCancelled"] = "Envío cancelado exitosamente",
                 ["ShipmentStatusUpdated"] = "Estado del envío actualizado",
+                ["FinishedGoodBatch"] = "Lote de Producto Terminado",
+                ["AutoSelectBatchHelp"] = "Dejar vacío para descontar automáticamente de los lotes más antiguos",
+                ["Available"] = "Disponible",
                 // Reports page
                 ["ReportsAnalytics"] = "Reportes y Analíticas",
                 ["ReportDesigner"] = "Diseñador de Reportes",

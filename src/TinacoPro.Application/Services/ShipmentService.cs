@@ -72,10 +72,20 @@ public class ShipmentService
             Notes = dto.Notes
         };
 
-        // If finished good is specified, deplete stock
+        // Deplete finished goods stock
         if (dto.FinishedGoodId.HasValue)
         {
+            // Specific batch selected — deplete from that batch
             await DepleteFinishedGoodsStockAsync(dto.FinishedGoodId.Value, dto.Quantity);
+        }
+        else
+        {
+            // No specific batch selected — auto-deplete from available batches for this product (FIFO)
+            var assignedBatchId = await AutoDepleteFinishedGoodsAsync(dto.ProductId, dto.Quantity);
+            if (assignedBatchId.HasValue)
+            {
+                shipment.FinishedGoodId = assignedBatchId.Value;
+            }
         }
 
         var createdShipment = await _shipmentRepository.CreateAsync(shipment);
@@ -228,6 +238,44 @@ public class ShipmentService
 
         finishedGood.Quantity -= quantity;
         await _finishedGoodRepository.UpdateAsync(finishedGood);
+    }
+
+    /// <summary>
+    /// Auto-depletes finished goods stock for a product when no specific batch is selected.
+    /// Uses FIFO (oldest production date first) and can span multiple batches if needed.
+    /// Returns the ID of the primary batch used, or null if no stock was available.
+    /// </summary>
+    private async Task<int?> AutoDepleteFinishedGoodsAsync(int productId, decimal quantity)
+    {
+        var batches = await _finishedGoodRepository.GetByProductIdAsync(productId);
+        var availableBatches = batches
+            .Where(fg => fg.Quantity > 0)
+            .OrderBy(fg => fg.ProductionDate)
+            .ToList();
+
+        if (!availableBatches.Any())
+            return null;
+
+        var totalAvailable = availableBatches.Sum(fg => fg.Quantity);
+        if (totalAvailable < quantity)
+            throw new InvalidOperationException($"Insufficient finished goods stock for product ID {productId}. Available: {totalAvailable}, Required: {quantity}");
+
+        int? primaryBatchId = null;
+        var remaining = quantity;
+
+        foreach (var batch in availableBatches)
+        {
+            if (remaining <= 0) break;
+
+            primaryBatchId ??= batch.Id;
+
+            var depleteAmount = Math.Min(batch.Quantity, remaining);
+            batch.Quantity -= depleteAmount;
+            remaining -= depleteAmount;
+            await _finishedGoodRepository.UpdateAsync(batch);
+        }
+
+        return primaryBatchId;
     }
 
     private async Task RestoreFinishedGoodsStockAsync(int finishedGoodId, decimal quantity)

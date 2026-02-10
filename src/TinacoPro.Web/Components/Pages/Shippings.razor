@@ -105,10 +105,11 @@ else
                 </MudSelect>
             </MudItem>
             <MudItem xs="12" md="6">
-                <MudSelect @bind-Value="editingShipment.FinishedGoodId" Label="@Localization.Translate("FinishedGoodOptional")" T="int?" Clearable="true">
-                    @foreach (var fg in finishedGoods ?? Enumerable.Empty<FinishedGoodsDto>())
+                <MudSelect @bind-Value="editingShipment.FinishedGoodId" Label="@Localization.Translate("FinishedGoodBatch")" T="int?" Clearable="true"
+                           HelperText="@Localization.Translate("AutoSelectBatchHelp")">
+                    @foreach (var fg in FilteredFinishedGoods)
                     {
-                        <MudSelectItem T="int?" Value="@fg.Id">@fg.ProductName - Batch: @fg.BatchNumber (Qty: @fg.Quantity)</MudSelectItem>
+                        <MudSelectItem T="int?" Value="@fg.Id">@fg.ProductName - Batch: @fg.BatchNumber (@Localization.Translate("Available"): @fg.Quantity)</MudSelectItem>
                     }
                 </MudSelect>
             </MudItem>
@@ -165,6 +166,18 @@ else
             if (shipments == null) return Enumerable.Empty<ShipmentDto>();
             if (string.IsNullOrWhiteSpace(selectedStatusString)) return shipments;
             return shipments.Where(s => s.Status == selectedStatusString);
+        }
+    }
+
+    private IEnumerable<FinishedGoodsDto> FilteredFinishedGoods
+    {
+        get
+        {
+            if (finishedGoods == null) return Enumerable.Empty<FinishedGoodsDto>();
+            // Filter by selected product and only show batches with available stock
+            return finishedGoods
+                .Where(fg => fg.ProductId == editingShipment.ProductId && fg.Quantity > 0)
+                .OrderBy(fg => fg.ProductionDate);
         }
     }
 
