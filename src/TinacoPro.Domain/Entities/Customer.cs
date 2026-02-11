@@ -13,7 +13,4 @@ public class Customer : BaseEntity
     public string Zone { get; set; } = string.Empty;
     public string? Notes { get; set; }
     public bool IsActive { get; set; } = true;
-
-    // Navigation properties
-    public ICollection<Shipment> Shipments { get; set; } = new List<Shipment>();
 }
