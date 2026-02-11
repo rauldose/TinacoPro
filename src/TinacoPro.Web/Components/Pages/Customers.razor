@@ -1,0 +1,210 @@
+@page "/customers"
+@rendermode InteractiveServer
+@using TinacoPro.Application.Services
+@using TinacoPro.Application.DTOs
+@using TinacoPro.Web.Services
+@inject CustomerService CustomerService
+@inject LocalizationService Localization
+@inject ISnackbar Snackbar
+@implements IDisposable
+
+<PageTitle>@Localization.Translate("Customers") - TinacoPro</PageTitle>
+
+<MudText Typo="Typo.h4" Class="mb-4">@Localization.Translate("Customers")</MudText>
+
+<MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" 
+           OnClick="ShowCreateForm" Class="mb-4">
+    @Localization.Translate("NewCustomer")
+</MudButton>
+
+@if (customers == null)
+{
+    <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+}
+else if (customers.Any())
+{
+    <MudGrid>
+        @foreach (var customer in customers)
+        {
+            <MudItem xs="12" sm="6" md="4">
+                <MudCard Elevation="2">
+                    <MudCardHeader>
+                        <CardHeaderContent>
+                            <MudText Typo="Typo.h6">@customer.Name</MudText>
+                            <MudChip T="string" Size="Size.Small" Color="@(customer.IsActive ? Color.Success : Color.Default)">
+                                @(customer.IsActive ? Localization.Translate("Active") : Localization.Translate("Inactive"))
+                            </MudChip>
+                        </CardHeaderContent>
+                    </MudCardHeader>
+                    <MudCardContent>
+                        <MudText Typo="Typo.body2" Class="mb-2">
+                            <MudIcon Icon="@Icons.Material.Filled.Person" Size="Size.Small" /> 
+                            <strong>@Localization.Translate("Contact"):</strong> @customer.ContactName
+                        </MudText>
+                        <MudText Typo="Typo.body2" Class="mb-2">
+                            <MudIcon Icon="@Icons.Material.Filled.Phone" Size="Size.Small" /> 
+                            <strong>@Localization.Translate("Phone"):</strong> @customer.Phone
+                        </MudText>
+                        <MudText Typo="Typo.body2" Class="mb-2">
+                            <MudIcon Icon="@Icons.Material.Filled.Email" Size="Size.Small" /> 
+                            <strong>@Localization.Translate("Email"):</strong> @customer.Email
+                        </MudText>
+                        <MudText Typo="Typo.body2" Class="mb-2">
+                            <MudIcon Icon="@Icons.Material.Filled.LocationOn" Size="Size.Small" /> 
+                            <strong>@Localization.Translate("Address"):</strong> @customer.Address
+                        </MudText>
+                        <MudText Typo="Typo.body2" Class="mb-2">
+                            <MudIcon Icon="@Icons.Material.Filled.LocationCity" Size="Size.Small" /> 
+                            <strong>@Localization.Translate("City"):</strong> @customer.City
+                        </MudText>
+                        <MudText Typo="Typo.body2">
+                            <MudIcon Icon="@Icons.Material.Filled.Map" Size="Size.Small" /> 
+                            <strong>@Localization.Translate("ZoneState"):</strong> @customer.Zone
+                        </MudText>
+                    </MudCardContent>
+                    <MudCardActions>
+                        <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Info"
+                                       OnClick="@(() => ShowEditForm(customer))" Title="@Localization.Translate("Edit")" />
+                    </MudCardActions>
+                </MudCard>
+            </MudItem>
+        }
+    </MudGrid>
+}
+else
+{
+    <MudAlert Severity="Severity.Info">@Localization.Translate("NoCustomersFound")</MudAlert>
+}
+
+<MudDialog @bind-Visible="showForm" Options="dialogOptions">
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            @(editingCustomer == null ? Localization.Translate("NewCustomer") : Localization.Translate("EditCustomer"))
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudTextField @bind-Value="formModel.Name" Label="@Localization.Translate("Name")" Variant="Variant.Outlined" Class="mb-3" Required="true" />
+        <MudTextField @bind-Value="formModel.ContactName" Label="@Localization.Translate("Contact")" Variant="Variant.Outlined" Class="mb-3" Required="true" />
+        <MudTextField @bind-Value="formModel.Phone" Label="@Localization.Translate("Phone")" Variant="Variant.Outlined" Class="mb-3" />
+        <MudTextField @bind-Value="formModel.Email" Label="@Localization.Translate("Email")" Variant="Variant.Outlined" Class="mb-3" InputType="InputType.Email" />
+        <MudTextField @bind-Value="formModel.Address" Label="@Localization.Translate("Address")" Variant="Variant.Outlined" Lines="3" Class="mb-3" />
+        <MudTextField @bind-Value="formModel.City" Label="@Localization.Translate("City")" Variant="Variant.Outlined" Class="mb-3" />
+        <MudTextField @bind-Value="formModel.Zone" Label="@Localization.Translate("ZoneState")" Variant="Variant.Outlined" Class="mb-3" />
+        <MudTextField @bind-Value="formModel.Notes" Label="@Localization.Translate("Notes")" Variant="Variant.Outlined" Lines="3" Class="mb-3" />
+        <MudSwitch T="bool" @bind-Value="formModel.IsActive" Label="@Localization.Translate("Active")" Color="Color.Success" />
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="HideForm" Variant="Variant.Text">@Localization.Translate("Cancel")</MudButton>
+        <MudButton OnClick="SaveCustomer" Variant="Variant.Filled" Color="Color.Primary">@Localization.Translate("Save")</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    private IEnumerable<CustomerDto>? customers;
+    private bool showForm = false;
+    private CustomerDto? editingCustomer;
+    private CustomerFormModel formModel = new();
+    private DialogOptions dialogOptions = new() { MaxWidth = MaxWidth.Small, FullWidth = true };
+
+    protected override async Task OnInitializedAsync()
+    {
+        Localization.OnLanguageChanged += HandleLanguageChanged;
+        await LoadCustomers();
+    }
+
+    private async void HandleLanguageChanged()
+    {
+        await InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        Localization.OnLanguageChanged -= HandleLanguageChanged;
+    }
+
+    private async Task LoadCustomers()
+    {
+        customers = await CustomerService.GetAllCustomersAsync();
+    }
+
+    private void ShowCreateForm()
+    {
+        editingCustomer = null;
+        formModel = new CustomerFormModel();
+        showForm = true;
+    }
+
+    private void ShowEditForm(CustomerDto customer)
+    {
+        editingCustomer = customer;
+        formModel = new CustomerFormModel
+        {
+            Name = customer.Name,
+            ContactName = customer.ContactName,
+            Phone = customer.Phone,
+            Email = customer.Email,
+            Address = customer.Address,
+            City = customer.City,
+            Zone = customer.Zone,
+            Notes = customer.Notes,
+            IsActive = customer.IsActive
+        };
+        showForm = true;
+    }
+
+    private void HideForm()
+    {
+        showForm = false;
+        editingCustomer = null;
+    }
+
+    private async Task SaveCustomer()
+    {
+        if (editingCustomer == null)
+        {
+            var createDto = new CreateCustomerDto
+            {
+                Name = formModel.Name,
+                ContactName = formModel.ContactName,
+                Phone = formModel.Phone,
+                Email = formModel.Email,
+                Address = formModel.Address,
+                City = formModel.City,
+                Zone = formModel.Zone,
+                Notes = formModel.Notes
+            };
+            await CustomerService.CreateCustomerAsync(createDto);
+            Snackbar.Add(Localization.Translate("CustomerCreated"), Severity.Success);
+        }
+        else
+        {
+            editingCustomer.Name = formModel.Name;
+            editingCustomer.ContactName = formModel.ContactName;
+            editingCustomer.Phone = formModel.Phone;
+            editingCustomer.Email = formModel.Email;
+            editingCustomer.Address = formModel.Address;
+            editingCustomer.City = formModel.City;
+            editingCustomer.Zone = formModel.Zone;
+            editingCustomer.Notes = formModel.Notes;
+            editingCustomer.IsActive = formModel.IsActive;
+            await CustomerService.UpdateCustomerAsync(editingCustomer);
+            Snackbar.Add(Localization.Translate("CustomerUpdated"), Severity.Success);
+        }
+        
+        HideForm();
+        await LoadCustomers();
+    }
+
+    private class CustomerFormModel
+    {
+        public string Name { get; set; } = string.Empty;
+        public string ContactName { get; set; } = string.Empty;
+        public string Phone { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
+        public string Address { get; set; } = string.Empty;
+        public string City { get; set; } = string.Empty;
+        public string Zone { get; set; } = string.Empty;
+        public string? Notes { get; set; }
+        public bool IsActive { get; set; } = true;
+    }
+}
