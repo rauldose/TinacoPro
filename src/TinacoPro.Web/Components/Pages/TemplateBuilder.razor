@@ -10,7 +10,7 @@
 @implements IDisposable
 
 <MudContainer MaxWidth="MaxWidth.False" Class="pa-4">
-    <MudText Typo="Typo.h4" Class="mb-4">Product Template Builder</MudText>
+    <MudText Typo="Typo.h4" Class="mb-4">@Localization.Translate("ProductTemplateBuilder")</MudText>
     
     <MudGrid>
         <!-- Left Panel: Template List -->
@@ -18,11 +18,11 @@
             <MudCard>
                 <MudCardHeader>
                     <CardHeaderContent>
-                        <MudText Typo="Typo.h6">Templates</MudText>
+                        <MudText Typo="Typo.h6">@Localization.Translate("Templates")</MudText>
                     </CardHeaderContent>
                     <CardHeaderActions>
                         <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Small" 
-                                   OnClick="OpenNewTemplateDialog">New Template</MudButton>
+                                   OnClick="OpenNewTemplateDialog">@Localization.Translate("NewTemplate")</MudButton>
                     </CardHeaderActions>
                 </MudCardHeader>
                 <MudCardContent>
@@ -32,7 +32,7 @@
                     }
                     else if (!templates.Any())
                     {
-                        <MudAlert Severity="Severity.Info">No templates yet. Create your first template!</MudAlert>
+                        <MudAlert Severity="Severity.Info">@Localization.Translate("NoTemplatesFound")</MudAlert>
                     }
                     else
                     {
@@ -47,7 +47,7 @@
                                             <MudText Typo="Typo.caption">@template.ModelType</MudText>
                                         </div>
                                         <MudChip T="string" Size="Size.Small" Color="@(template.IsActive ? Color.Success : Color.Default)">
-                                            @(template.IsActive ? "Active" : "Inactive")
+                                            @(template.IsActive ? Localization.Translate("Active") : Localization.Translate("Inactive"))
                                         </MudChip>
                                     </div>
                                 </MudListItem>
@@ -80,28 +80,28 @@
                         
                         <MudDivider Class="my-3" />
                         
-                        <MudText Typo="Typo.h6" Class="mb-2">Cost Summary</MudText>
+                        <MudText Typo="Typo.h6" Class="mb-2">@Localization.Translate("CostSummary")</MudText>
                         <MudGrid>
                             <MudItem xs="6" sm="3">
-                                <MudText Typo="Typo.caption">Material Cost</MudText>
+                                <MudText Typo="Typo.caption">@Localization.Translate("MaterialCost")</MudText>
                                 <MudText Typo="Typo.body1" Color="Color.Primary">
                                     $@selectedTemplate.TotalMaterialCost.ToString("F2")
                                 </MudText>
                             </MudItem>
                             <MudItem xs="6" sm="3">
-                                <MudText Typo="Typo.caption">Labor Cost</MudText>
+                                <MudText Typo="Typo.caption">@Localization.Translate("LaborCost")</MudText>
                                 <MudText Typo="Typo.body1" Color="Color.Secondary">
                                     $@selectedTemplate.TotalLaborCost.ToString("F2")
                                 </MudText>
                             </MudItem>
                             <MudItem xs="6" sm="3">
-                                <MudText Typo="Typo.caption">Est. Time</MudText>
+                                <MudText Typo="Typo.caption">@Localization.Translate("EstTime")</MudText>
                                 <MudText Typo="Typo.body1">
                                     @selectedTemplate.TotalEstimatedMinutes min
                                 </MudText>
                             </MudItem>
                             <MudItem xs="6" sm="3">
-                                <MudText Typo="Typo.caption">Total Cost</MudText>
+                                <MudText Typo="Typo.caption">@Localization.Translate("TotalCost")</MudText>
                                 <MudText Typo="Typo.h6" Color="Color.Success">
                                     $@((selectedTemplate.TotalMaterialCost + selectedTemplate.TotalLaborCost).ToString("F2"))
                                 </MudText>
@@ -111,16 +111,16 @@
                         <MudDivider Class="my-3" />
 
                         <div class="d-flex justify-space-between align-center mb-2">
-                            <MudText Typo="Typo.h6">Parts</MudText>
+                            <MudText Typo="Typo.h6">@Localization.Translate("Parts")</MudText>
                             <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Small" 
                                        StartIcon="@Icons.Material.Filled.Add" OnClick="OpenNewPartDialog">
-                                Add Part
+                                @Localization.Translate("AddPart")
                             </MudButton>
                         </div>
 
                         @if (selectedTemplate.RootParts == null || !selectedTemplate.RootParts.Any())
                         {
-                            <MudAlert Severity="Severity.Info">No parts yet. Add parts to build your template!</MudAlert>
+                            <MudAlert Severity="Severity.Info">@Localization.Translate("NoPartsFound")</MudAlert>
                         }
                         else
                         {
@@ -139,7 +139,7 @@
                 <MudCard>
                     <MudCardContent>
                         <MudText Typo="Typo.body1" Align="Align.Center" Color="Color.Secondary">
-                            Select a template from the list to view details
+                            @Localization.Translate("SelectTemplatePrompt")
                         </MudText>
                     </MudCardContent>
                 </MudCard>
@@ -180,10 +180,10 @@
         </MudSelect>
 
         <MudSelect @bind-Value="editingPart.PartType" Label="@Localization.Translate("PartType")" Required="true" Class="mt-3">
-            <MudSelectItem Value="@("Assembly")">Assembly</MudSelectItem>
-            <MudSelectItem Value="@("Material")">Material</MudSelectItem>
-            <MudSelectItem Value="@("Component")">Component</MudSelectItem>
-            <MudSelectItem Value="@("Process")">Process</MudSelectItem>
+            <MudSelectItem Value="@("Assembly")">@Localization.Translate("Assembly")</MudSelectItem>
+            <MudSelectItem Value="@("Material")">@Localization.Translate("Material")</MudSelectItem>
+            <MudSelectItem Value="@("Component")">@Localization.Translate("Component")</MudSelectItem>
+            <MudSelectItem Value="@("Process")">@Localization.Translate("Process")</MudSelectItem>
         </MudSelect>
 
         <MudTextField @bind-Value="editingPart.Name" Label="@Localization.Translate("PartName")" Required="true" Class="mt-3" />
@@ -211,7 +211,7 @@
                         </div>
                         @if (material.IsLowStock)
                         {
-                            <MudChip T="string" Size="Size.Small" Color="Color.Warning">Low Stock</MudChip>
+                            <MudChip T="string" Size="Size.Small" Color="Color.Warning">@Localization.Translate("LowStock")</MudChip>
                         }
                     </div>
                 </ItemTemplate>
@@ -226,7 +226,7 @@
                 </MudText>
                 <MudButton Variant="Variant.Text" Size="Size.Small" StartIcon="@Icons.Material.Filled.Add" 
                            OnClick="OpenQuickAddMaterialDialog" Color="Color.Primary">
-                    Quick Add Material
+                    @Localization.Translate("QuickAddMaterial")
                 </MudButton>
             </div>
         }
@@ -270,32 +270,32 @@
             <MudListItem T="string" OnClick="@(() => OpenAddChildDialog(contextMenuPart))">
                 <div class="d-flex align-center">
                     <MudIcon Icon="@Icons.Material.Filled.Add" Size="Size.Small" Class="mr-2" />
-                    <MudText Typo="Typo.body2">Add Child Part</MudText>
+                    <MudText Typo="Typo.body2">@Localization.Translate("AddChildPart")</MudText>
                 </div>
             </MudListItem>
             <MudListItem T="string" OnClick="@(() => OpenEditPartDialog(contextMenuPart))">
                 <div class="d-flex align-center">
                     <MudIcon Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Class="mr-2" />
-                    <MudText Typo="Typo.body2">Edit Part</MudText>
+                    <MudText Typo="Typo.body2">@Localization.Translate("EditPart")</MudText>
                 </div>
             </MudListItem>
             <MudListItem T="string" OnClick="@(() => DeletePart(contextMenuPart.Id))">
                 <div class="d-flex align-center">
                     <MudIcon Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error" Class="mr-2" />
-                    <MudText Typo="Typo.body2" Color="Color.Error">Delete Part</MudText>
+                    <MudText Typo="Typo.body2" Color="Color.Error">@Localization.Translate("DeletePart")</MudText>
                 </div>
             </MudListItem>
             <MudDivider />
             <MudListItem T="string" OnClick="@(() => MovePartUp(contextMenuPart))">
                 <div class="d-flex align-center">
                     <MudIcon Icon="@Icons.Material.Filled.ArrowUpward" Size="Size.Small" Class="mr-2" />
-                    <MudText Typo="Typo.body2">Move Up</MudText>
+                    <MudText Typo="Typo.body2">@Localization.Translate("MoveUp")</MudText>
                 </div>
             </MudListItem>
             <MudListItem T="string" OnClick="@(() => MovePartDown(contextMenuPart))">
                 <div class="d-flex align-center">
                     <MudIcon Icon="@Icons.Material.Filled.ArrowDownward" Size="Size.Small" Class="mr-2" />
-                    <MudText Typo="Typo.body2">Move Down</MudText>
+                    <MudText Typo="Typo.body2">@Localization.Translate("MoveDown")</MudText>
                 </div>
             </MudListItem>
         </MudList>
@@ -377,12 +377,12 @@
             if (editingTemplate.Id > 0)
             {
                 await TemplateService.UpdateTemplateAsync(editingTemplate);
-                Snackbar.Add("Template updated successfully", Severity.Success);
+                Snackbar.Add(Localization.Translate("TemplateUpdated"), Severity.Success);
             }
             else
             {
                 await TemplateService.CreateTemplateAsync(editingTemplate);
-                Snackbar.Add("Template created successfully", Severity.Success);
+                Snackbar.Add(Localization.Translate("TemplateCreated"), Severity.Success);
             }
 
             showTemplateDialog = false;
@@ -406,7 +406,7 @@
             try
             {
                 await TemplateService.DeleteTemplateAsync(selectedTemplate.Id);
-                Snackbar.Add("Template deleted successfully", Severity.Success);
+                Snackbar.Add(Localization.Translate("TemplateDeleted"), Severity.Success);
                 selectedTemplate = null;
                 await LoadData();
             }
@@ -468,12 +468,12 @@
             if (editingPart.Id > 0)
             {
                 await TemplateService.UpdatePartAsync(editingPart);
-                Snackbar.Add("Part updated successfully", Severity.Success);
+                Snackbar.Add(Localization.Translate("PartUpdated"), Severity.Success);
             }
             else
             {
                 await TemplateService.AddPartAsync(editingPart);
-                Snackbar.Add("Part added successfully", Severity.Success);
+                Snackbar.Add(Localization.Translate("PartAdded"), Severity.Success);
             }
 
             showPartDialog = false;
@@ -494,7 +494,7 @@
         try
         {
             await TemplateService.DeletePartAsync(partId);
-            Snackbar.Add("Part deleted successfully", Severity.Success);
+            Snackbar.Add(Localization.Translate("PartDeleted"), Severity.Success);
 
             if (selectedTemplate != null)
             {
@@ -557,7 +557,7 @@
         try
         {
             var newMaterial = await MaterialService.CreateMaterialAsync(quickAddMaterial);
-            Snackbar.Add("Material added successfully", Severity.Success);
+            Snackbar.Add(Localization.Translate("MaterialAdded"), Severity.Success);
             
             // Reload materials list
             materials = (await MaterialService.GetAllMaterialsAsync()).ToList();
@@ -670,7 +670,7 @@
                 contentBuilder.AddAttribute(16, "Icon", Icons.Material.Filled.Add);
                 contentBuilder.AddAttribute(17, "Size", Size.Small);
                 contentBuilder.AddAttribute(18, "Color", Color.Primary);
-                contentBuilder.AddAttribute(19, "Title", "Add Child Part");
+                contentBuilder.AddAttribute(19, "Title", Localization.Translate("AddChildPart"));
                 contentBuilder.AddAttribute(20, "OnClick", EventCallback.Factory.Create<MouseEventArgs>(this, (e) => OpenAddChildDialog(part)));
                 contentBuilder.CloseComponent();
 
@@ -678,7 +678,7 @@
                 contentBuilder.AddAttribute(22, "Icon", Icons.Material.Filled.Edit);
                 contentBuilder.AddAttribute(23, "Size", Size.Small);
                 contentBuilder.AddAttribute(24, "Color", Color.Info);
-                contentBuilder.AddAttribute(25, "Title", "Edit Part");
+                contentBuilder.AddAttribute(25, "Title", Localization.Translate("EditPart"));
                 contentBuilder.AddAttribute(26, "OnClick", EventCallback.Factory.Create<MouseEventArgs>(this, (e) => OpenEditPartDialog(part)));
                 contentBuilder.CloseComponent();
 
@@ -686,7 +686,7 @@
                 contentBuilder.AddAttribute(28, "Icon", Icons.Material.Filled.Delete);
                 contentBuilder.AddAttribute(29, "Size", Size.Small);
                 contentBuilder.AddAttribute(30, "Color", Color.Error);
-                contentBuilder.AddAttribute(31, "Title", "Delete Part");
+                contentBuilder.AddAttribute(31, "Title", Localization.Translate("DeletePart"));
                 contentBuilder.AddAttribute(32, "OnClick", EventCallback.Factory.Create<MouseEventArgs>(this, (e) => DeletePart(part.Id)));
                 contentBuilder.CloseComponent();
 
@@ -696,14 +696,14 @@
                     contentBuilder.OpenComponent<MudIconButton>(33);
                     contentBuilder.AddAttribute(34, "Icon", Icons.Material.Filled.ArrowUpward);
                     contentBuilder.AddAttribute(35, "Size", Size.Small);
-                    contentBuilder.AddAttribute(36, "Title", "Move Up");
+                    contentBuilder.AddAttribute(36, "Title", Localization.Translate("MoveUp"));
                     contentBuilder.AddAttribute(37, "OnClick", EventCallback.Factory.Create<MouseEventArgs>(this, (e) => MovePartUp(part)));
                     contentBuilder.CloseComponent();
 
                     contentBuilder.OpenComponent<MudIconButton>(38);
                     contentBuilder.AddAttribute(39, "Icon", Icons.Material.Filled.ArrowDownward);
                     contentBuilder.AddAttribute(40, "Size", Size.Small);
-                    contentBuilder.AddAttribute(41, "Title", "Move Down");
+                    contentBuilder.AddAttribute(41, "Title", Localization.Translate("MoveDown"));
                     contentBuilder.AddAttribute(42, "OnClick", EventCallback.Factory.Create<MouseEventArgs>(this, (e) => MovePartDown(part)));
                     contentBuilder.CloseComponent();
                 }
