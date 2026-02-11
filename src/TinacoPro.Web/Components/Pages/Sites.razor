@@ -1,0 +1,210 @@
+@page "/sites"
+@rendermode InteractiveServer
+@using TinacoPro.Application.Services
+@using TinacoPro.Application.DTOs
+@using TinacoPro.Web.Services
+@inject SiteService SiteService
+@inject LocalizationService Localization
+@inject ISnackbar Snackbar
+@implements IDisposable
+
+<PageTitle>@Localization.Translate("Sites") - TinacoPro</PageTitle>
+
+<MudText Typo="Typo.h4" Class="mb-4">@Localization.Translate("SiteManagement")</MudText>
+
+<MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" 
+           OnClick="ShowCreateForm" Class="mb-4">
+    @Localization.Translate("NewSite")
+</MudButton>
+
+@if (sites == null)
+{
+    <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+}
+else if (sites.Any())
+{
+    <MudGrid>
+        @foreach (var site in sites)
+        {
+            <MudItem xs="12" sm="6" md="4">
+                <MudCard Elevation="2">
+                    <MudCardHeader>
+                        <CardHeaderContent>
+                            <MudText Typo="Typo.h6">@site.Name</MudText>
+                            <MudChip T="string" Size="Size.Small" Color="@(site.IsActive ? Color.Success : Color.Default)">
+                                @(site.IsActive ? Localization.Translate("Active") : Localization.Translate("Inactive"))
+                            </MudChip>
+                        </CardHeaderContent>
+                    </MudCardHeader>
+                    <MudCardContent>
+                        <MudText Typo="Typo.body2" Class="mb-2">
+                            <MudIcon Icon="@Icons.Material.Filled.QrCode" Size="Size.Small" /> 
+                            <strong>@Localization.Translate("SiteCode"):</strong> @site.Code
+                        </MudText>
+                        <MudText Typo="Typo.body2" Class="mb-2">
+                            <MudIcon Icon="@Icons.Material.Filled.LocationOn" Size="Size.Small" /> 
+                            <strong>@Localization.Translate("Address"):</strong> @site.Address
+                        </MudText>
+                        <MudText Typo="Typo.body2" Class="mb-2">
+                            <MudIcon Icon="@Icons.Material.Filled.LocationCity" Size="Size.Small" /> 
+                            <strong>@Localization.Translate("City"):</strong> @site.City
+                        </MudText>
+                        <MudText Typo="Typo.body2" Class="mb-2">
+                            <MudIcon Icon="@Icons.Material.Filled.Map" Size="Size.Small" /> 
+                            <strong>@Localization.Translate("State"):</strong> @site.State
+                        </MudText>
+                        <MudText Typo="Typo.body2" Class="mb-2">
+                            <MudIcon Icon="@Icons.Material.Filled.Phone" Size="Size.Small" /> 
+                            <strong>@Localization.Translate("Phone"):</strong> @site.Phone
+                        </MudText>
+                        <MudText Typo="Typo.body2">
+                            <MudIcon Icon="@Icons.Material.Filled.Person" Size="Size.Small" /> 
+                            <strong>@Localization.Translate("Manager"):</strong> @site.ManagerName
+                        </MudText>
+                    </MudCardContent>
+                    <MudCardActions>
+                        <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Info"
+                                       OnClick="@(() => ShowEditForm(site))" Title="@Localization.Translate("Edit")" />
+                    </MudCardActions>
+                </MudCard>
+            </MudItem>
+        }
+    </MudGrid>
+}
+else
+{
+    <MudAlert Severity="Severity.Info">@Localization.Translate("NoSitesFound")</MudAlert>
+}
+
+<MudDialog @bind-Visible="showForm" Options="dialogOptions">
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            @(editingSite == null ? Localization.Translate("NewSite") : Localization.Translate("EditSite"))
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudTextField @bind-Value="formModel.Name" Label="@Localization.Translate("Name")" Variant="Variant.Outlined" Class="mb-3" Required="true" />
+        <MudTextField @bind-Value="formModel.Code" Label="@Localization.Translate("SiteCode")" Variant="Variant.Outlined" Class="mb-3" Required="true" />
+        <MudTextField @bind-Value="formModel.Address" Label="@Localization.Translate("Address")" Variant="Variant.Outlined" Lines="3" Class="mb-3" />
+        <MudTextField @bind-Value="formModel.City" Label="@Localization.Translate("City")" Variant="Variant.Outlined" Class="mb-3" />
+        <MudTextField @bind-Value="formModel.State" Label="@Localization.Translate("State")" Variant="Variant.Outlined" Class="mb-3" />
+        <MudTextField @bind-Value="formModel.Phone" Label="@Localization.Translate("Phone")" Variant="Variant.Outlined" Class="mb-3" />
+        <MudTextField @bind-Value="formModel.ManagerName" Label="@Localization.Translate("Manager")" Variant="Variant.Outlined" Class="mb-3" />
+        <MudTextField @bind-Value="formModel.Notes" Label="@Localization.Translate("Notes")" Variant="Variant.Outlined" Lines="3" Class="mb-3" />
+        <MudSwitch T="bool" @bind-Value="formModel.IsActive" Label="@Localization.Translate("Active")" Color="Color.Success" />
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="HideForm" Variant="Variant.Text">@Localization.Translate("Cancel")</MudButton>
+        <MudButton OnClick="SaveSite" Variant="Variant.Filled" Color="Color.Primary">@Localization.Translate("Save")</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    private IEnumerable<SiteDto>? sites;
+    private bool showForm = false;
+    private SiteDto? editingSite;
+    private SiteFormModel formModel = new();
+    private DialogOptions dialogOptions = new() { MaxWidth = MaxWidth.Small, FullWidth = true };
+
+    protected override async Task OnInitializedAsync()
+    {
+        Localization.OnLanguageChanged += HandleLanguageChanged;
+        await LoadSites();
+    }
+
+    private async void HandleLanguageChanged()
+    {
+        await InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        Localization.OnLanguageChanged -= HandleLanguageChanged;
+    }
+
+    private async Task LoadSites()
+    {
+        sites = await SiteService.GetAllSitesAsync();
+    }
+
+    private void ShowCreateForm()
+    {
+        editingSite = null;
+        formModel = new SiteFormModel();
+        showForm = true;
+    }
+
+    private void ShowEditForm(SiteDto site)
+    {
+        editingSite = site;
+        formModel = new SiteFormModel
+        {
+            Name = site.Name,
+            Code = site.Code,
+            Address = site.Address,
+            City = site.City,
+            State = site.State,
+            Phone = site.Phone,
+            ManagerName = site.ManagerName,
+            Notes = site.Notes,
+            IsActive = site.IsActive
+        };
+        showForm = true;
+    }
+
+    private void HideForm()
+    {
+        showForm = false;
+        editingSite = null;
+    }
+
+    private async Task SaveSite()
+    {
+        if (editingSite == null)
+        {
+            var createDto = new CreateSiteDto
+            {
+                Name = formModel.Name,
+                Code = formModel.Code,
+                Address = formModel.Address,
+                City = formModel.City,
+                State = formModel.State,
+                Phone = formModel.Phone,
+                ManagerName = formModel.ManagerName,
+                Notes = formModel.Notes
+            };
+            await SiteService.CreateSiteAsync(createDto);
+            Snackbar.Add(Localization.Translate("SiteCreated"), Severity.Success);
+        }
+        else
+        {
+            editingSite.Name = formModel.Name;
+            editingSite.Code = formModel.Code;
+            editingSite.Address = formModel.Address;
+            editingSite.City = formModel.City;
+            editingSite.State = formModel.State;
+            editingSite.Phone = formModel.Phone;
+            editingSite.ManagerName = formModel.ManagerName;
+            editingSite.Notes = formModel.Notes;
+            editingSite.IsActive = formModel.IsActive;
+            await SiteService.UpdateSiteAsync(editingSite);
+            Snackbar.Add(Localization.Translate("SiteUpdated"), Severity.Success);
+        }
+        
+        HideForm();
+        await LoadSites();
+    }
+
+    private class SiteFormModel
+    {
+        public string Name { get; set; } = string.Empty;
+        public string Code { get; set; } = string.Empty;
+        public string Address { get; set; } = string.Empty;
+        public string City { get; set; } = string.Empty;
+        public string State { get; set; } = string.Empty;
+        public string Phone { get; set; } = string.Empty;
+        public string? ManagerName { get; set; }
+        public string? Notes { get; set; }
+        public bool IsActive { get; set; } = true;
+    }
+}
