@@ -2,16 +2,20 @@
 @rendermode InteractiveServer
 @using TinacoPro.Application.Services
 @using TinacoPro.Application.DTOs
+@using TinacoPro.Web.Services
 @inject ProductionOrderService OrderService
 @inject ProductService ProductService
+@inject LocalizationService Localization
+@inject ISnackbar Snackbar
+@implements IDisposable
 
-<PageTitle>Production Orders - TinacoPro</PageTitle>
+<PageTitle>@Localization.Translate("ProductionOrders") - TinacoPro</PageTitle>
 
-<MudText Typo="Typo.h4" Class="mb-4">Production Orders</MudText>
+<MudText Typo="Typo.h4" Class="mb-4">@Localization.Translate("ProductionOrdersManagement")</MudText>
 
 <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" 
            OnClick="ShowCreateForm" Class="mb-4">
-    New Production Order
+    @Localization.Translate("NewProductionOrder")
 </MudButton>
 
 @if (orders == null)
@@ -22,19 +26,19 @@ else if (orders.Any())
 {
     <MudTable Items="@orders" Hover="true" Striped="true" Dense="true" Elevation="2">
         <HeaderContent>
-            <MudTh>Order Number</MudTh>
-            <MudTh>Product</MudTh>
-            <MudTh>Quantity</MudTh>
-            <MudTh>Status</MudTh>
-            <MudTh>Order Date</MudTh>
-            <MudTh>Completed Date</MudTh>
-            <MudTh>Actions</MudTh>
+            <MudTh>@Localization.Translate("OrderNumber")</MudTh>
+            <MudTh>@Localization.Translate("Product")</MudTh>
+            <MudTh>@Localization.Translate("Quantity")</MudTh>
+            <MudTh>@Localization.Translate("Status")</MudTh>
+            <MudTh>@Localization.Translate("OrderDate")</MudTh>
+            <MudTh>@Localization.Translate("CompletedDate")</MudTh>
+            <MudTh>@Localization.Translate("Actions")</MudTh>
         </HeaderContent>
         <RowTemplate>
-            <MudTd DataLabel="Order Number">@context.OrderNumber</MudTd>
-            <MudTd DataLabel="Product">@context.ProductName</MudTd>
-            <MudTd DataLabel="Quantity">@context.Quantity</MudTd>
-            <MudTd DataLabel="Status">
+            <MudTd DataLabel="@Localization.Translate("OrderNumber")">@context.OrderNumber</MudTd>
+            <MudTd DataLabel="@Localization.Translate("Product")">@context.ProductName</MudTd>
+            <MudTd DataLabel="@Localization.Translate("Quantity")">@context.Quantity</MudTd>
+            <MudTd DataLabel="@Localization.Translate("Status")">
                 @{
                     var chipColor = context.Status switch
                     {
@@ -45,25 +49,25 @@ else if (orders.Any())
                         _ => Color.Default
                     };
                 }
-                <MudChip T="string" Color="@chipColor" Size="Size.Small">@context.Status</MudChip>
+                <MudChip T="string" Color="@chipColor" Size="Size.Small">@Localization.Translate(context.Status)</MudChip>
             </MudTd>
-            <MudTd DataLabel="Order Date">@context.OrderDate.ToString("yyyy-MM-dd")</MudTd>
-            <MudTd DataLabel="Completed Date">@(context.CompletedDate?.ToString("yyyy-MM-dd") ?? "-")</MudTd>
-            <MudTd DataLabel="Actions">
+            <MudTd DataLabel="@Localization.Translate("OrderDate")">@context.OrderDate.ToString("yyyy-MM-dd")</MudTd>
+            <MudTd DataLabel="@Localization.Translate("CompletedDate")">@(context.CompletedDate?.ToString("yyyy-MM-dd") ?? "-")</MudTd>
+            <MudTd DataLabel="@Localization.Translate("Actions")">
                 @if (context.Status == "Pending")
                 {
                     <MudIconButton Icon="@Icons.Material.Filled.PlayArrow" Size="Size.Small" Color="Color.Info"
-                                   OnClick="@(() => StartOrder(context.Id))" Title="Start" />
+                                   OnClick="@(() => StartOrder(context.Id))" Title="@Localization.Translate("Start")" />
                 }
                 @if (context.Status == "InProgress")
                 {
                     <MudIconButton Icon="@Icons.Material.Filled.CheckCircle" Size="Size.Small" Color="Color.Success"
-                                   OnClick="@(() => CompleteOrder(context.Id))" Title="Complete" />
+                                   OnClick="@(() => CompleteOrder(context.Id))" Title="@Localization.Translate("Complete")" />
                 }
                 @if (context.Status == "Pending" || context.Status == "InProgress")
                 {
                     <MudIconButton Icon="@Icons.Material.Filled.Cancel" Size="Size.Small" Color="Color.Error"
-                                   OnClick="@(() => CancelOrder(context.Id))" Title="Cancel" />
+                                   OnClick="@(() => CancelOrder(context.Id))" Title="@Localization.Translate("Cancel")" />
                 }
             </MudTd>
         </RowTemplate>
@@ -71,15 +75,15 @@ else if (orders.Any())
 }
 else
 {
-    <MudAlert Severity="Severity.Info">No production orders found. Create your first order!</MudAlert>
+    <MudAlert Severity="Severity.Info">@Localization.Translate("NoOrdersFound")</MudAlert>
 }
 
 <MudDialog @bind-Visible="showForm" Options="dialogOptions">
     <TitleContent>
-        <MudText Typo="Typo.h6">New Production Order</MudText>
+        <MudText Typo="Typo.h6">@Localization.Translate("NewProductionOrder")</MudText>
     </TitleContent>
     <DialogContent>
-        <MudSelect @bind-Value="formModel.ProductId" Label="Product" Variant="Variant.Outlined" Class="mb-3" Required="true">
+        <MudSelect @bind-Value="formModel.ProductId" Label="@Localization.Translate("Product")" Variant="Variant.Outlined" Class="mb-3" Required="true">
             @if (products != null)
             {
                 @foreach (var product in products)
@@ -88,12 +92,12 @@ else
                 }
             }
         </MudSelect>
-        <MudNumericField @bind-Value="formModel.Quantity" Label="Quantity" Variant="Variant.Outlined" Class="mb-3" Min="1" Required="true" />
-        <MudTextField @bind-Value="formModel.Notes" Label="Notes" Variant="Variant.Outlined" Lines="3" Class="mb-3" />
+        <MudNumericField @bind-Value="formModel.Quantity" Label="@Localization.Translate("Quantity")" Variant="Variant.Outlined" Class="mb-3" Min="1" Required="true" />
+        <MudTextField @bind-Value="formModel.Notes" Label="@Localization.Translate("Notes")" Variant="Variant.Outlined" Lines="3" Class="mb-3" />
     </DialogContent>
     <DialogActions>
-        <MudButton OnClick="HideForm" Variant="Variant.Text">Cancel</MudButton>
-        <MudButton OnClick="SaveOrder" Variant="Variant.Filled" Color="Color.Primary">Create Order</MudButton>
+        <MudButton OnClick="HideForm" Variant="Variant.Text">@Localization.Translate("Cancel")</MudButton>
+        <MudButton OnClick="SaveOrder" Variant="Variant.Filled" Color="Color.Primary">@Localization.Translate("CreateOrder")</MudButton>
     </DialogActions>
 </MudDialog>
 
@@ -106,8 +110,19 @@ else
 
     protected override async Task OnInitializedAsync()
     {
+        Localization.OnLanguageChanged += HandleLanguageChanged;
         await LoadOrders();
         products = await ProductService.GetAllProductsAsync();
+    }
+
+    private async void HandleLanguageChanged()
+    {
+        await InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        Localization.OnLanguageChanged -= HandleLanguageChanged;
     }
 
     private async Task LoadOrders()

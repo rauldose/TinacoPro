@@ -24,6 +24,8 @@ public class TinacoProDbContext : DbContext
     public DbSet<TemplatePart> TemplateParts => Set<TemplatePart>();
     public DbSet<MaterialConsumptionLog> MaterialConsumptionLogs => Set<MaterialConsumptionLog>();
     public DbSet<Shipment> Shipments => Set<Shipment>();
+    public DbSet<Customer> Customers => Set<Customer>();
+    public DbSet<Site> Sites => Set<Site>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -282,6 +284,35 @@ public class TinacoProDbContext : DbContext
                 .WithMany()
                 .HasForeignKey(e => e.FinishedGoodId)
                 .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        // Customer configuration
+        modelBuilder.Entity<Customer>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Name).IsRequired().HasMaxLength(200);
+            entity.Property(e => e.ContactName).HasMaxLength(200);
+            entity.Property(e => e.Phone).HasMaxLength(50);
+            entity.Property(e => e.Email).HasMaxLength(200);
+            entity.Property(e => e.Address).HasMaxLength(500);
+            entity.Property(e => e.City).HasMaxLength(100);
+            entity.Property(e => e.Zone).HasMaxLength(100);
+            entity.Property(e => e.Notes).HasMaxLength(500);
+        });
+
+        // Site configuration
+        modelBuilder.Entity<Site>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Name).IsRequired().HasMaxLength(200);
+            entity.Property(e => e.Code).IsRequired().HasMaxLength(50);
+            entity.HasIndex(e => e.Code).IsUnique();
+            entity.Property(e => e.Address).HasMaxLength(500);
+            entity.Property(e => e.City).HasMaxLength(100);
+            entity.Property(e => e.State).HasMaxLength(100);
+            entity.Property(e => e.Phone).HasMaxLength(50);
+            entity.Property(e => e.ManagerName).HasMaxLength(200);
+            entity.Property(e => e.Notes).HasMaxLength(500);
         });
 
         // Seed initial data

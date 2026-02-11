@@ -36,6 +36,9 @@ builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IProductTemplateRepository, ProductTemplateRepository>();
 builder.Services.AddScoped<IFinishedGoodRepository, FinishedGoodRepository>();
 builder.Services.AddScoped<IMaterialConsumptionLogRepository, MaterialConsumptionLogRepository>();
+builder.Services.AddScoped<IShipmentRepository, ShipmentRepository>();
+builder.Services.AddScoped<ICustomerRepository, CustomerRepository>();
+builder.Services.AddScoped<ISiteRepository, SiteRepository>();
 
 // Register application services
 builder.Services.AddScoped<ProductService>();
@@ -47,9 +50,8 @@ builder.Services.AddScoped<ExcelExportService>();
 builder.Services.AddScoped<ProductTemplateService>();
 builder.Services.AddScoped<FinishedGoodsService>();
 builder.Services.AddScoped<ShipmentService>();
-
-// Register repositories
-builder.Services.AddScoped<IShipmentRepository, ShipmentRepository>();
+builder.Services.AddScoped<CustomerService>();
+builder.Services.AddScoped<SiteService>();
 
 var app = builder.Build();
 

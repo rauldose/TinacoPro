@@ -7,6 +7,7 @@
 @inject ProductService ProductService
 @inject ISnackbar Snackbar
 @inject LocalizationService Localization
+@implements IDisposable
 
 <PageTitle>@Localization.Translate("DailyProductionEntry") - TinacoPro</PageTitle>
 
@@ -138,8 +139,19 @@ else
 
     protected override async Task OnInitializedAsync()
     {
+        Localization.OnLanguageChanged += HandleLanguageChanged;
         await LoadProducts();
         await LoadHistoricalOrders();
+    }
+
+    private async void HandleLanguageChanged()
+    {
+        await InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        Localization.OnLanguageChanged -= HandleLanguageChanged;
     }
 
     private async Task LoadProducts()
@@ -168,6 +180,9 @@ else
             return;
 
         int ordersCreated = 0;
+        int ordersAutoCompleted = 0;
+        var allAutoStarted = new List<string>();
+        var allLowStockWarnings = new List<string>();
 
         try
         {
@@ -183,13 +198,37 @@ else
                         : productionNotes
                 };
                 
-                await OrderService.CreateOrderAsync(createDto);
+                var (order, autoCompleted, autoStartedOrders, lowStockWarnings) = await OrderService.CreateDailyProductionOrderAsync(createDto);
                 ordersCreated++;
+                if (autoCompleted)
+                    ordersAutoCompleted++;
+                allAutoStarted.AddRange(autoStartedOrders);
+                foreach (var warning in lowStockWarnings)
+                {
+                    if (!allLowStockWarnings.Contains(warning))
+                        allLowStockWarnings.Add(warning);
+                }
             }
 
             if (ordersCreated > 0)
             {
-                Snackbar.Add($"Production orders created successfully for {ordersCreated} product(s)!", Severity.Success);
+                Snackbar.Add(string.Format(Localization.Translate("ProductionOrdersCreatedSuccess"), ordersCreated), Severity.Success);
+                Snackbar.Add(Localization.Translate("OrderAutoStarted"), Severity.Info);
+                
+                if (allAutoStarted.Count > 0)
+                {
+                    Snackbar.Add(string.Format(Localization.Translate("ExistingOrdersAutoStarted"), allAutoStarted.Count), Severity.Info);
+                }
+                
+                if (ordersAutoCompleted > 0)
+                {
+                    Snackbar.Add(Localization.Translate("OrderAutoCompleted"), Severity.Success);
+                }
+                
+                foreach (var warning in allLowStockWarnings)
+                {
+                    Snackbar.Add($"{Localization.Translate("LowStockAlert")}: {warning}", Severity.Warning);
+                }
                 
                 // Reset form
                 foreach (var key in productQuantities.Keys.ToList())
@@ -205,12 +244,12 @@ else
             }
             else
             {
-                Snackbar.Add("Please enter quantities for at least one product.", Severity.Warning);
+                Snackbar.Add(Localization.Translate("EnterQuantityWarning"), Severity.Warning);
             }
         }
         catch (Exception ex)
         {
-            Snackbar.Add($"Error creating production orders: {ex.Message}", Severity.Error);
+            Snackbar.Add(string.Format(Localization.Translate("ErrorCreatingOrders"), ex.Message), Severity.Error);
         }
     }
 
@@ -233,48 +272,6 @@ else
             "Morning" => Color.Info,
             "Afternoon" => Color.Warning,
             "Night" => Color.Secondary,
-            _ => Color.Default
-        };
-    }
-}
-                
-                await OrderService.CreateOrderAsync(createDto);
-                ordersCreated++;
-            }
-
-            if (ordersCreated > 0)
-            {
-                Snackbar.Add($"Production orders created successfully for {ordersCreated} product(s)!", Severity.Success);
-                
-                // Reset form
-                foreach (var key in productQuantities.Keys.ToList())
-                {
-                    productQuantities[key] = 0;
-                }
-                productionDate = DateTime.Today;
-                
-                // Reload historical orders
-                await LoadHistoricalOrders();
-            }
-            else
-            {
-                Snackbar.Add("Please enter quantities for at least one product.", Severity.Warning);
-            }
-        }
-        catch (Exception ex)
-        {
-            Snackbar.Add($"Error creating production orders: {ex.Message}", Severity.Error);
-        }
-    }
-
-    private Color GetStatusColor(string status)
-    {
-        return status switch
-        {
-            "Pending" => Color.Warning,
-            "InProgress" => Color.Info,
-            "Completed" => Color.Success,
-            "Cancelled" => Color.Error,
             _ => Color.Default
         };
     }

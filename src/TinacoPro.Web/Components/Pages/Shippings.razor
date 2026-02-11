@@ -9,26 +9,27 @@
 @inject FinishedGoodsService FinishedGoodsService
 @inject ISnackbar Snackbar
 @inject LocalizationService Localization
+@implements IDisposable
 
-<PageTitle>Shipments - TinacoPro</PageTitle>
+<PageTitle>@Localization.Translate("ShipmentManagement") - TinacoPro</PageTitle>
 
-<MudText Typo="Typo.h4" Class="mb-4">Shipment Management</MudText>
+<MudText Typo="Typo.h4" Class="mb-4">@Localization.Translate("ShipmentManagement")</MudText>
 
 <MudPaper Class="pa-4 mb-4" Elevation="2">
     <MudGrid>
         <MudItem xs="12" sm="6" md="3">
-            <MudSelect @bind-Value="selectedStatusString" Label="Filter by Status" Variant="Variant.Outlined" Clearable="true" T="string">
-                <MudSelectItem T="string" Value="@((string?)null)">All Statuses</MudSelectItem>
-                <MudSelectItem T="string" Value="@("Pending")">Pending</MudSelectItem>
-                <MudSelectItem T="string" Value="@("InTransit")">In Transit</MudSelectItem>
-                <MudSelectItem T="string" Value="@("Delivered")">Delivered</MudSelectItem>
-                <MudSelectItem T="string" Value="@("Cancelled")">Cancelled</MudSelectItem>
+            <MudSelect @bind-Value="selectedStatusString" Label="@Localization.Translate("FilterByStatus")" Variant="Variant.Outlined" Clearable="true" T="string">
+                <MudSelectItem T="string" Value="@((string?)null)">@Localization.Translate("AllStatuses")</MudSelectItem>
+                <MudSelectItem T="string" Value="@("Pending")">@Localization.Translate("Pending")</MudSelectItem>
+                <MudSelectItem T="string" Value="@("InTransit")">@Localization.Translate("InTransit")</MudSelectItem>
+                <MudSelectItem T="string" Value="@("Delivered")">@Localization.Translate("Delivered")</MudSelectItem>
+                <MudSelectItem T="string" Value="@("Cancelled")">@Localization.Translate("Cancelled")</MudSelectItem>
             </MudSelect>
         </MudItem>
         <MudItem xs="12" sm="6" md="3">
             <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" 
                        OnClick="OpenNewShipmentDialog" FullWidth="true">
-                New Shipment
+                @Localization.Translate("NewShipment")
             </MudButton>
         </MudItem>
     </MudGrid>
@@ -42,14 +43,14 @@ else
 {
     <MudTable Items="@FilteredShipments" Hover="true" Striped="true" Dense="true" Elevation="2">
         <HeaderContent>
-            <MudTh>Shipment #</MudTh>
-            <MudTh>Customer</MudTh>
-            <MudTh>Product</MudTh>
-            <MudTh>Quantity</MudTh>
-            <MudTh>Destination</MudTh>
-            <MudTh>Shipment Date</MudTh>
-            <MudTh>Status</MudTh>
-            <MudTh>Actions</MudTh>
+            <MudTh>@Localization.Translate("ShipmentNumber")</MudTh>
+            <MudTh>@Localization.Translate("Customer")</MudTh>
+            <MudTh>@Localization.Translate("Product")</MudTh>
+            <MudTh>@Localization.Translate("Quantity")</MudTh>
+            <MudTh>@Localization.Translate("Destination")</MudTh>
+            <MudTh>@Localization.Translate("ShipmentDate")</MudTh>
+            <MudTh>@Localization.Translate("Status")</MudTh>
+            <MudTh>@Localization.Translate("Actions")</MudTh>
         </HeaderContent>
         <RowTemplate>
             <MudTd DataLabel="Shipment #">@context.ShipmentNumber</MudTd>
@@ -69,18 +70,18 @@ else
             </MudTd>
             <MudTd DataLabel="Actions">
                 <MudMenu Icon="@Icons.Material.Filled.MoreVert" Size="Size.Small">
-                    <MudMenuItem OnClick="@(() => OpenEditShipmentDialog(context))">Edit</MudMenuItem>
+                    <MudMenuItem OnClick="@(() => OpenEditShipmentDialog(context))">@Localization.Translate("Edit")</MudMenuItem>
                     @if (context.Status == "Pending")
                     {
-                        <MudMenuItem OnClick="@(() => UpdateStatus(context.Id, ShipmentStatus.InTransit))">Mark as In Transit</MudMenuItem>
+                        <MudMenuItem OnClick="@(() => UpdateStatus(context.Id, ShipmentStatus.InTransit))">@Localization.Translate("MarkAsInTransit")</MudMenuItem>
                     }
                     @if (context.Status == "InTransit")
                     {
-                        <MudMenuItem OnClick="@(() => UpdateStatus(context.Id, ShipmentStatus.Delivered))">Mark as Delivered</MudMenuItem>
+                        <MudMenuItem OnClick="@(() => UpdateStatus(context.Id, ShipmentStatus.Delivered))">@Localization.Translate("MarkAsDelivered")</MudMenuItem>
                     }
                     @if (context.Status != "Delivered" && context.Status != "Cancelled")
                     {
-                        <MudMenuItem OnClick="@(() => CancelShipment(context.Id))">Cancel Shipment</MudMenuItem>
+                        <MudMenuItem OnClick="@(() => CancelShipment(context.Id))">@Localization.Translate("CancelShipmentAction")</MudMenuItem>
                     }
                 </MudMenu>
             </MudTd>
@@ -104,10 +105,11 @@ else
                 </MudSelect>
             </MudItem>
             <MudItem xs="12" md="6">
-                <MudSelect @bind-Value="editingShipment.FinishedGoodId" Label="@Localization.Translate("FinishedGoodOptional")" T="int?" Clearable="true">
-                    @foreach (var fg in finishedGoods ?? Enumerable.Empty<FinishedGoodsDto>())
+                <MudSelect @bind-Value="editingShipment.FinishedGoodId" Label="@Localization.Translate("FinishedGoodBatch")" T="int?" Clearable="true"
+                           HelperText="@Localization.Translate("AutoSelectBatchHelp")">
+                    @foreach (var fg in FilteredFinishedGoods)
                     {
-                        <MudSelectItem T="int?" Value="@fg.Id">@fg.ProductName - Batch: @fg.BatchNumber (Qty: @fg.Quantity)</MudSelectItem>
+                        <MudSelectItem T="int?" Value="@fg.Id">@fg.ProductName - Batch: @fg.BatchNumber (@Localization.Translate("Available"): @fg.CurrentStock)</MudSelectItem>
                     }
                 </MudSelect>
             </MudItem>
@@ -167,13 +169,50 @@ else
         }
     }
 
+    private IEnumerable<FinishedGoodsDto> FilteredFinishedGoods
+    {
+        get
+        {
+            if (finishedGoods == null) return Enumerable.Empty<FinishedGoodsDto>();
+            // Filter by selected product and only show batches with available stock
+            return finishedGoods
+                .Where(fg => fg.ProductId == editingShipment.ProductId && fg.CurrentStock > 0)
+                .OrderBy(fg => fg.ProductionDate);
+        }
+    }
+
     protected override async Task OnInitializedAsync()
     {
+        Localization.OnLanguageChanged += HandleLanguageChanged;
         await LoadData();
+    }
+
+    private async void HandleLanguageChanged()
+    {
+        await InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        Localization.OnLanguageChanged -= HandleLanguageChanged;
     }
 
     private async Task LoadData()
     {
+        // Auto-dispatch pending shipments whose shipment date has arrived
+        var autoDispatched = await ShipmentService.AutoDispatchPendingShipmentsAsync();
+        // Auto-deliver InTransit shipments whose expected delivery date has passed
+        var autoDelivered = await ShipmentService.AutoDeliverShipmentsAsync();
+        
+        if (autoDispatched > 0)
+        {
+            Snackbar.Add(string.Format(Localization.Translate("ShipmentsAutoDispatched"), autoDispatched), Severity.Info);
+        }
+        if (autoDelivered > 0)
+        {
+            Snackbar.Add(string.Format(Localization.Translate("ShipmentsAutoDelivered"), autoDelivered), Severity.Info);
+        }
+
         shipments = await ShipmentService.GetAllShipmentsAsync();
         products = await ProductService.GetAllProductsAsync();
         finishedGoods = await FinishedGoodsService.GetAllAsync();
@@ -218,12 +257,12 @@ else
             if (editingShipmentId > 0)
             {
                 await ShipmentService.UpdateShipmentAsync(editingShipmentId, editingShipment);
-                Snackbar.Add("Shipment updated successfully", Severity.Success);
+                Snackbar.Add(Localization.Translate("ShipmentUpdated"), Severity.Success);
             }
             else
             {
                 await ShipmentService.CreateShipmentAsync(editingShipment);
-                Snackbar.Add("Shipment created successfully", Severity.Success);
+                Snackbar.Add(Localization.Translate("ShipmentCreated"), Severity.Success);
             }
 
             showShipmentDialog = false;
@@ -240,7 +279,7 @@ else
         try
         {
             await ShipmentService.UpdateShipmentStatusAsync(shipmentId, newStatus);
-            Snackbar.Add($"Shipment status updated to {newStatus}", Severity.Success);
+            Snackbar.Add(Localization.Translate("ShipmentStatusUpdated"), Severity.Success);
             await LoadData();
         }
         catch (Exception ex)
@@ -254,7 +293,7 @@ else
         try
         {
             await ShipmentService.CancelShipmentAsync(shipmentId);
-            Snackbar.Add("Shipment cancelled successfully", Severity.Success);
+            Snackbar.Add(Localization.Translate("ShipmentCancelled"), Severity.Success);
             await LoadData();
         }
         catch (Exception ex)

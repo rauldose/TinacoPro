@@ -5,14 +5,15 @@
 @using TinacoPro.Web.Services
 @inject RawMaterialService MaterialService
 @inject LocalizationService Localization
+@implements IDisposable
 
-<PageTitle>Raw Materials - TinacoPro</PageTitle>
+<PageTitle>@Localization.Translate("RawMaterialsInventory") - TinacoPro</PageTitle>
 
-<MudText Typo="Typo.h4" Class="mb-4">Raw Materials Inventory</MudText>
+<MudText Typo="Typo.h4" Class="mb-4">@Localization.Translate("RawMaterialsInventory")</MudText>
 
 <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" 
            OnClick="ShowCreateForm" Class="mb-4">
-    New Material
+    @Localization.Translate("NewMaterial")
 </MudButton>
 
 @if (materials == null)
@@ -24,7 +25,7 @@ else
     @if (materials.Any(m => m.IsLowStock && m.IsActive))
     {
         <MudAlert Severity="Severity.Warning" Class="mb-4" Icon="@Icons.Material.Filled.Warning">
-            <strong>Low Stock Alert:</strong> @materials.Count(m => m.IsLowStock && m.IsActive) material(s) are running low on stock!
+            <strong>@Localization.Translate("LowStockAlert")</strong> @materials.Count(m => m.IsLowStock && m.IsActive) @Localization.Translate("LowStockAlertCount")
         </MudAlert>
     }
 
@@ -32,15 +33,15 @@ else
     {
         <MudTable Items="@materials" Hover="true" Striped="true" Dense="true" Elevation="2">
             <HeaderContent>
-                <MudTh>Name</MudTh>
-                <MudTh>Code</MudTh>
-                <MudTh>Category</MudTh>
-                <MudTh>Unit</MudTh>
-                <MudTh>Current Stock</MudTh>
-                <MudTh>Min Stock</MudTh>
-                <MudTh>Unit Cost</MudTh>
-                <MudTh>Status</MudTh>
-                <MudTh>Actions</MudTh>
+                <MudTh>@Localization.Translate("Name")</MudTh>
+                <MudTh>@Localization.Translate("Code")</MudTh>
+                <MudTh>@Localization.Translate("Category")</MudTh>
+                <MudTh>@Localization.Translate("Unit")</MudTh>
+                <MudTh>@Localization.Translate("CurrentStock")</MudTh>
+                <MudTh>@Localization.Translate("MinStock")</MudTh>
+                <MudTh>@Localization.Translate("UnitCost")</MudTh>
+                <MudTh>@Localization.Translate("Status")</MudTh>
+                <MudTh>@Localization.Translate("Actions")</MudTh>
             </HeaderContent>
             <RowTemplate>
                 <MudTd DataLabel="Name">
@@ -62,63 +63,63 @@ else
                 <MudTd DataLabel="Unit Cost">$@context.UnitCost.ToString("N2")</MudTd>
                 <MudTd DataLabel="Status">
                     <MudChip T="string" Color="@(context.IsActive ? Color.Success : Color.Default)" Size="Size.Small">
-                        @(context.IsActive ? "Active" : "Inactive")
+                        @(context.IsActive ? Localization.Translate("Active") : Localization.Translate("Inactive"))
                     </MudChip>
                 </MudTd>
-                <MudTd DataLabel="Actions">
+                <MudTd DataLabel="@Localization.Translate("Actions")">
                     <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Color="Color.Info"
-                                   OnClick="@(() => ShowEditForm(context))" Title="Edit" />
+                                   OnClick="@(() => ShowEditForm(context))" Title="@Localization.Translate("Edit")" />
                     <MudIconButton Icon="@Icons.Material.Filled.Add" Size="Size.Small" Color="Color.Success"
-                                   OnClick="@(() => ShowStockInForm(context))" Title="Stock In" />
+                                   OnClick="@(() => ShowStockInForm(context))" Title="@Localization.Translate("StockIn")" />
                     <MudIconButton Icon="@Icons.Material.Filled.Remove" Size="Size.Small" Color="Color.Warning"
-                                   OnClick="@(() => ShowStockOutForm(context))" Title="Stock Out" />
+                                   OnClick="@(() => ShowStockOutForm(context))" Title="@Localization.Translate("StockOut")" />
                 </MudTd>
             </RowTemplate>
         </MudTable>
     }
     else
     {
-        <MudAlert Severity="Severity.Info">No materials found. Create your first material!</MudAlert>
+        <MudAlert Severity="Severity.Info">@Localization.Translate("NoMaterialsFound")</MudAlert>
     }
 }
 
 <MudDialog @bind-Visible="showForm" Options="dialogOptions">
     <TitleContent>
         <MudText Typo="Typo.h6">
-            @(editingMaterial == null ? "New Material" : "Edit Material")
+            @(editingMaterial == null ? Localization.Translate("NewMaterial") : Localization.Translate("EditMaterial"))
         </MudText>
     </TitleContent>
     <DialogContent>
-        <MudTextField @bind-Value="formModel.Name" Label="Name" Variant="Variant.Outlined" Class="mb-3" Required="true" />
-        <MudTextField @bind-Value="formModel.Code" Label="Code" Variant="Variant.Outlined" Class="mb-3" Required="true" />
-        <MudTextField @bind-Value="formModel.Unit" Label="Unit (kg, L, pcs)" Variant="Variant.Outlined" Class="mb-3" Required="true" />
-        <MudNumericField @bind-Value="formModel.MinimumStock" Label="Minimum Stock" Variant="Variant.Outlined" Class="mb-3" Min="0" />
-        <MudNumericField @bind-Value="formModel.UnitCost" Label="Unit Cost" Variant="Variant.Outlined" Class="mb-3" Min="0" Format="N2" />
-        <MudSwitch T="bool" @bind-Checked="formModel.IsActive" Label="@Localization.Translate("Active")" Color="Color.Success" />
+        <MudTextField @bind-Value="formModel.Name" Label="@Localization.Translate("Name")" Variant="Variant.Outlined" Class="mb-3" Required="true" />
+        <MudTextField @bind-Value="formModel.Code" Label="@Localization.Translate("Code")" Variant="Variant.Outlined" Class="mb-3" Required="true" />
+        <MudTextField @bind-Value="formModel.Unit" Label="@Localization.Translate("UnitFormat")" Variant="Variant.Outlined" Class="mb-3" Required="true" />
+        <MudNumericField @bind-Value="formModel.MinimumStock" Label="@Localization.Translate("MinimumStock")" Variant="Variant.Outlined" Class="mb-3" Min="0" />
+        <MudNumericField @bind-Value="formModel.UnitCost" Label="@Localization.Translate("UnitCost")" Variant="Variant.Outlined" Class="mb-3" Min="0" Format="N2" />
+        <MudSwitch T="bool" @bind-Value="formModel.IsActive" Label="@Localization.Translate("Active")" Color="Color.Success" />
     </DialogContent>
     <DialogActions>
-        <MudButton OnClick="HideForm" Variant="Variant.Text">Cancel</MudButton>
-        <MudButton OnClick="SaveMaterial" Variant="Variant.Filled" Color="Color.Primary">Save</MudButton>
+        <MudButton OnClick="HideForm" Variant="Variant.Text">@Localization.Translate("Cancel")</MudButton>
+        <MudButton OnClick="SaveMaterial" Variant="Variant.Filled" Color="Color.Primary">@Localization.Translate("Save")</MudButton>
     </DialogActions>
 </MudDialog>
 
 <MudDialog @bind-Visible="showStockForm" Options="dialogOptions">
     <TitleContent>
         <MudText Typo="Typo.h6">
-            @(isStockIn ? "Stock In" : "Stock Out") - @selectedMaterial?.Name
+            @(isStockIn ? Localization.Translate("StockIn") : Localization.Translate("StockOut")) - @selectedMaterial?.Name
         </MudText>
     </TitleContent>
     <DialogContent>
         <MudAlert Severity="Severity.Info" Class="mb-3">
-            Current Stock: <strong>@selectedMaterial?.CurrentStock.ToString("N2") @selectedMaterial?.Unit</strong>
+            @Localization.Translate("CurrentStock"): <strong>@selectedMaterial?.CurrentStock.ToString("N2") @selectedMaterial?.Unit</strong>
         </MudAlert>
-        <MudNumericField @bind-Value="stockQuantity" Label="Quantity" Variant="Variant.Outlined" Class="mb-3" Min="0" Required="true" />
-        <MudTextField @bind-Value="stockReason" Label="Reason" Variant="Variant.Outlined" Lines="2" />
+        <MudNumericField @bind-Value="stockQuantity" Label="@Localization.Translate("Quantity")" Variant="Variant.Outlined" Class="mb-3" Min="0" Required="true" />
+        <MudTextField @bind-Value="stockReason" Label="@Localization.Translate("Reason")" Variant="Variant.Outlined" Lines="2" />
     </DialogContent>
     <DialogActions>
-        <MudButton OnClick="HideStockForm" Variant="Variant.Text">Cancel</MudButton>
+        <MudButton OnClick="HideStockForm" Variant="Variant.Text">@Localization.Translate("Cancel")</MudButton>
         <MudButton OnClick="SaveStockMovement" Variant="Variant.Filled" Color="@(isStockIn ? Color.Success : Color.Warning)">
-            @(isStockIn ? "Add Stock" : "Remove Stock")
+            @(isStockIn ? Localization.Translate("AddStock") : Localization.Translate("RemoveStock"))
         </MudButton>
     </DialogActions>
 </MudDialog>
@@ -137,7 +138,18 @@ else
 
     protected override async Task OnInitializedAsync()
     {
+        Localization.OnLanguageChanged += HandleLanguageChanged;
         await LoadMaterials();
+    }
+
+    private async void HandleLanguageChanged()
+    {
+        await InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        Localization.OnLanguageChanged -= HandleLanguageChanged;
     }
 
     private async Task LoadMaterials()

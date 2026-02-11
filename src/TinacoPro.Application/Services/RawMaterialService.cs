@@ -116,4 +116,26 @@ public class RawMaterialService
             await _repository.UpdateAsync(material);
         }
     }
+
+    /// <summary>
+    /// Returns all active materials whose current stock is at or below their minimum stock level.
+    /// </summary>
+    public async Task<IEnumerable<RawMaterialDto>> GetLowStockMaterialsAsync()
+    {
+        var materials = await _repository.GetAllAsync();
+        return materials
+            .Where(m => m.IsActive && m.CurrentStock <= m.MinimumStock)
+            .Select(m => new RawMaterialDto
+            {
+                Id = m.Id,
+                Name = m.Name,
+                Code = m.Code,
+                Unit = m.Unit,
+                Category = m.Category.ToString(),
+                CurrentStock = m.CurrentStock,
+                MinimumStock = m.MinimumStock,
+                UnitCost = m.UnitCost,
+                IsActive = m.IsActive
+            });
+    }
 }

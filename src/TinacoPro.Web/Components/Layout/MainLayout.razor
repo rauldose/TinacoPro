@@ -1,7 +1,6 @@
 ﻿@inherits LayoutComponentBase
 @inject IJSRuntime JS
 @inject LocalizationService Localization
-@inject NavigationManager Navigation
 @using TinacoPro.Web.Services
 
 <MudThemeProvider Theme="@_theme" @bind-IsDarkMode="@_isDarkMode" />
@@ -14,12 +13,12 @@
         <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@((e) => DrawerToggle())" />
         <MudText Typo="Typo.h6" Class="ml-3">TinacoPro</MudText>
         <MudSpacer />
-        <MudTooltip Text="@(_isDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode")">
+        <MudTooltip Text="@(_isDarkMode ? Localization.Translate("SwitchToLightMode") : Localization.Translate("SwitchToDarkMode"))">
             <MudIconButton Icon="@(_isDarkMode ? Icons.Material.Filled.LightMode : Icons.Material.Filled.DarkMode)" 
                            Color="Color.Inherit" 
                            OnClick="@ToggleTheme" />
         </MudTooltip>
-        <MudTooltip Text="Language">
+        <MudTooltip Text="@Localization.Translate("Language")">
             <MudMenu Icon="@Icons.Material.Filled.Language" Color="Color.Inherit">
                 <MudMenuItem OnClick="@(() => ChangeLanguage("en"))">
                     <MudText>English</MudText>
@@ -108,12 +107,12 @@
                 StateHasChanged();
             }
 
-            // Load language preference from localStorage
+            // Load language preference from localStorage and apply to LocalizationService
             var storedLanguage = await JS.InvokeAsync<string?>("localStorage.getItem", "language");
             if (!string.IsNullOrEmpty(storedLanguage))
             {
                 _currentLanguage = storedLanguage;
-                StateHasChanged();
+                await Localization.SetLanguageAsync(storedLanguage);
             }
         }
     }
@@ -130,8 +129,6 @@
         await Localization.SetLanguageAsync(language);
         await JS.InvokeVoidAsync("localStorage.setItem", "language", language);
         StateHasChanged();
-        // Force page reload to propagate translations to all components
-        Navigation.NavigateTo(Navigation.Uri, forceLoad: true);
     }
 
     private void DrawerToggle()
